@@ -31,27 +31,25 @@ function initializeMap() {
                 // Initialize Leaflet map with OpenStreetMap
                 map = L.map("map").setView([lat, lng], 18);
 
-                // Add OpenStreetMap tile layer
-                L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                    attribution: "© OpenStreetMap contributors",
-                    maxZoom: 19,
-                }).addTo(map);
-
-                // Add satellite/imagery layer option
+                // Add satellite/imagery layer as default
                 const satellite = L.tileLayer(
                     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
                     {
                         attribution:
                             "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
                     }
-                );
+                ).addTo(map);
+
+                // Add OpenStreetMap as alternative
+                const openStreetMap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                    attribution: "© OpenStreetMap contributors",
+                    maxZoom: 19,
+                });
 
                 // Layer control to switch between map types
                 const baseMaps = {
-                    OpenStreetMap: L.tileLayer(
-                        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    ),
                     Satellite: satellite,
+                    OpenStreetMap: openStreetMap,
                 };
                 L.control.layers(baseMaps).addTo(map);
 

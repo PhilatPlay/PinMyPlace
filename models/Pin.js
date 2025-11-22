@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 const pinSchema = new mongoose.Schema({
     pinId: {
         type: String,
-        required: true,
-        unique: true
+        required: true
     },
     // Customer info (no account required)
     locationName: {
@@ -43,20 +42,16 @@ const pinSchema = new mongoose.Schema({
     // Payment info
     paymentAmount: {
         type: Number,
-        default: 50
+        default: 100
     },
     paymentMethod: {
         type: String,
         default: 'gcash'
     },
-    gcashReference: {
+    paymentReferenceId: {
         type: String,
         required: true,
         unique: true // Prevent duplicate payments
-    },
-    referenceNumber: {
-        type: String,
-        required: true
     },
     paymentStatus: {
         type: String,
@@ -71,7 +66,7 @@ const pinSchema = new mongoose.Schema({
     },
     agentCommission: {
         type: Number,
-        default: 0 // ₱25 if sold by agent
+        default: 0 // ₱50 if sold by agent
     },
     // QR Code
     qrCode: {

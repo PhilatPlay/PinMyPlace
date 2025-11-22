@@ -4,20 +4,39 @@ const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 const PAYMONGO_API_URL = 'https://api.paymongo.com/v1';
 
 // Create GCash payment link
-async function createGCashPayment(amount, description, metadata = {}) {
+async function createGCashPayment(amount, description, metadata = {}, successUrl = null) {
     try {
+        // Validate PayMongo key exists
+        if (!PAYMONGO_SECRET_KEY) {
+            console.error('PayMongo secret key not configured');
+            return {
+                success: false,
+                error: 'Payment system not configured. Please add PAYMONGO_SECRET_KEY to .env file'
+            };
+        }
+
         const auth = Buffer.from(PAYMONGO_SECRET_KEY).toString('base64');
+
+        const attributes = {
+            amount: amount * 100, // Convert to cents
+            description: description,
+            remarks: metadata.referenceNumber || 'PinMyPlace Payment',
+            payment_method_types: ['gcash', 'paymaya', 'grab_pay', 'card'], // Multiple payment options
+            metadata: metadata // Store pin data for later retrieval
+        };
+
+        // Add success URL if provided
+        if (successUrl) {
+            attributes.success_url = successUrl;
+        }
+
+        console.log('Creating payment with metadata:', JSON.stringify(metadata, null, 2));
 
         const response = await axios.post(
             `${PAYMONGO_API_URL}/links`,
             {
                 data: {
-                    attributes: {
-                        amount: amount * 100, // Convert to cents
-                        description: description,
-                        remarks: metadata.referenceNumber || 'PinMyPlace Payment',
-                        payment_method_types: ['gcash']
-                    }
+                    attributes: attributes
                 }
             },
             {
@@ -28,6 +47,8 @@ async function createGCashPayment(amount, description, metadata = {}) {
             }
         );
 
+        console.log('PayMongo link created with metadata:', response.data.data.attributes.metadata);
+
         return {
             success: true,
             paymentLink: response.data.data.attributes.checkout_url,
@@ -35,6 +56,15 @@ async function createGCashPayment(amount, description, metadata = {}) {
         };
     } catch (error) {
         console.error('PayMongo payment creation error:', error.response?.data || error.message);
+
+        // Network/DNS error
+        if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+            return {
+                success: false,
+                error: 'Cannot connect to PayMongo. Please check your internet connection or firewall settings.'
+            };
+        }
+
         return {
             success: false,
             error: error.response?.data?.errors?.[0]?.detail || 'Failed to create payment link'
@@ -56,14 +86,21 @@ async function verifyPayment(paymentId) {
             }
         );
 
-        const status = response.data.data.attributes.status;
-        const payments = response.data.data.attributes.payments || [];
+        const linkData = response.data.data;
+        const status = linkData.attributes.status;
+        const payments = linkData.attributes.payments || [];
+        const metadata = linkData.attributes.metadata || {};
 
         return {
             success: true,
             isPaid: status === 'paid',
             status: status,
-            paymentDetails: payments.length > 0 ? payments[0] : null
+            paymentDetails: {
+                attributes: {
+                    metadata: metadata
+                }
+            },
+            payments: payments
         };
     } catch (error) {
         console.error('PayMongo verification error:', error.response?.data || error.message);

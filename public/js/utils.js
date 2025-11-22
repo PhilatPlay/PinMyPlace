@@ -131,18 +131,7 @@ function copyToClipboard(text) {
 
 // Initialize app on page load
 window.onload = function () {
-    console.log("PinMyPlace initialized");
-
-    // Check for existing session
-    checkExistingSession();
-
-    // Set default value for map user ID
-    const mapUserIdElement = document.getElementById("mapUserId");
-    if (mapUserIdElement && currentUser) {
-        mapUserIdElement.value = currentUser.email || "user_" + Date.now();
-    } else if (mapUserIdElement) {
-        mapUserIdElement.value = "user_" + Date.now();
-    }
+    console.log("PinMyPlace initialized - Pay Per Pin Mode");
 
     // Check which libraries loaded
     if (typeof QRCode !== "undefined") {

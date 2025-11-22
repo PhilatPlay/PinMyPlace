@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payment Success - PinMyPlace</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📍 PinMyPlace</h1>
+        <p>Payment Processing...</p>
+      </div>
+
+      <div id="processingSection" class="card">
+        <div style="text-align: center; padding: 40px">
+          <div style="font-size: 48px; margin-bottom: 20px">⏳</div>
+          <h3>Verifying your payment...</h3>
+          <p style="color: #666">
+            Please wait while we confirm your GCash payment and generate your QR
+            code.
+          </p>
+        </div>
+      </div>
+
+      <div id="successSection" class="card" style="display: none">
+        <div class="status success">
+          <h3>🎉 Payment Successful!</h3>
+          <p>
+            Your location pin has been created. Here's your delivery QR code:
+          </p>
+        </div>
+
+        <div
+          style="
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+          "
+        >
+          <div id="qrDetails" style="margin-bottom: 15px"></div>
+          <div
+            id="qrCodeCanvas"
+            style="margin: 20px auto; display: inline-block"
+          ></div>
+
+          <div style="margin-top: 20px">
+            <button
+              onclick="downloadQR()"
+              style="
+                background: #28a745;
+                width: auto;
+                padding: 12px 30px;
+                margin: 5px;
+              "
+            >
+              📥 Download QR Code
+            </button>
+            <button
+              onclick="window.location.href='/'"
+              style="
+                background: #007bff;
+                width: auto;
+                padding: 12px 30px;
+                margin: 5px;
+              "
+            >
+              🏠 Create Another Pin
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="errorSection" class="card" style="display: none">
+        <div class="status error">
+          <h3>❌ Payment Not Confirmed</h3>
+          <p id="errorMessage">
+            We couldn't verify your payment. Please try again or contact
+            support.
+          </p>
+        </div>
+        <button onclick="window.location.href='/'" style="margin-top: 20px">
+          🔄 Try Again
+        </button>
+      </div>
+    </div>
+
+    <script src="/js/utils.js"></script>
+    <script>
+      // Get payment reference from URL or sessionStorage
+      const urlParams = new URLSearchParams(window.location.search);
+      let paymentRefId = urlParams.get("ref") || urlParams.get("id");
+
+      // If not in URL, check sessionStorage (we stored it before redirect)
+      if (!paymentRefId) {
+        paymentRefId = sessionStorage.getItem("paymentReference");
+        console.log("Retrieved from sessionStorage:", paymentRefId);
+      }
+
+      console.log("Payment reference:", paymentRefId);
+      console.log("Full URL:", window.location.href);
+
+      if (!paymentRefId) {
+        showError(
+          "No payment reference found. Please contact support with your payment details."
+        );
+      } else {
+        // Clear the stored reference
+        sessionStorage.removeItem("paymentReference");
+        verifyAndCreatePin(paymentRefId);
+      }
+
+      async function verifyAndCreatePin(refId) {
+        try {
+          // Check if agent is creating this pin
+          const agentData = localStorage.getItem("agentData");
+          const agentId = agentData ? JSON.parse(agentData)._id : null;
+
+          const response = await fetch("/api/pin/create-with-payment", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              paymentReferenceId: refId,
+              agentId: agentId,
+            }),
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            displaySuccess(result.pin);
+          } else {
+            showError(result.error || "Payment verification failed");
+          }
+        } catch (error) {
+          console.error("Pin creation error:", error);
+          showError("Connection error. Please refresh the page.");
+        }
+      }
+
+      function displaySuccess(pin) {
+        document.getElementById("processingSection").style.display = "none";
+        document.getElementById("successSection").style.display = "block";
+
+        // Format expiration date
+        const expiryDate = new Date(pin.expiresAt);
+        const formattedExpiry = expiryDate.toLocaleDateString("en-PH", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+
+        // Set details
+        document.getElementById("qrDetails").innerHTML = `
+                <h4>${pin.locationName}</h4>
+                <p style="color: #666; margin: 5px 0;">${
+                  pin.address || "No address specified"
+                }</p>
+                <p style="font-size: 13px; color: #999;">
+                    Pin ID: ${pin.pinId}<br>
+                    Valid until: ${formattedExpiry}<br>
+                    <strong>📍 GPS Coordinates:</strong> ${pin.correctedLatitude.toFixed(
+                      6
+                    )}, ${pin.correctedLongitude.toFixed(6)}
+                </p>
+            `;
+
+        // Generate QR code with Google Maps link
+        const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${pin.correctedLatitude},${pin.correctedLongitude}`;
+        generateQRCode(mapUrl);
+      }
+
+      function showError(message) {
+        document.getElementById("processingSection").style.display = "none";
+        document.getElementById("errorSection").style.display = "block";
+        document.getElementById("errorMessage").textContent = message;
+      }
+
+      async function downloadQR() {
+        const qrElement = document.getElementById("qrCodeCanvas");
+        try {
+          const canvas = await html2canvas(qrElement);
+          const link = document.createElement("a");
+          link.download = "pinmyplace-qr-code.png";
+          link.href = canvas.toDataURL();
+          link.click();
+        } catch (error) {
+          console.error("Failed to download QR code:", error);
+          alert("Failed to download QR code. Please try again.");
+        }
+      }
+    </script>
+  </body>
+</html>

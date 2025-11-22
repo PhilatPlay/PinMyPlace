@@ -45,12 +45,21 @@ app.get('*', (req, res) => {
 });
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-    .then(() => {
+mongoose.connect(process.env.MONGODB_URI)
+    .then(async () => {
         console.log('✅ Connected to MongoDB');
+
+        // Drop old gcashReference index if it exists
+        try {
+            const Pin = require('./models/Pin');
+            await Pin.collection.dropIndex('gcashReference_1');
+            console.log('🗑️  Dropped old gcashReference index');
+        } catch (error) {
+            // Index might not exist, that's OK
+            if (error.code !== 27) { // 27 = index not found
+                console.log('ℹ️  Old index already removed or doesn\'t exist');
+            }
+        }
 
         // Create default admin user if it doesn't exist
         createDefaultUsers();
@@ -125,6 +134,23 @@ app.listen(PORT, () => {
 🔧 API: http://localhost:${PORT}/api/health
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   `);
+
+    // Cleanup abandoned pending pins every hour
+    const Pin = require('./models/Pin');
+    setInterval(async () => {
+        try {
+            const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            const result = await Pin.deleteMany({
+                paymentStatus: 'pending',
+                createdAt: { $lt: oneDayAgo }
+            });
+            if (result.deletedCount > 0) {
+                console.log(`🧹 Cleaned up ${result.deletedCount} abandoned pending pin(s)`);
+            }
+        } catch (error) {
+            console.error('Error cleaning up pending pins:', error.message);
+        }
+    }, 60 * 60 * 1000); // Run every hour
 });
 
 module.exports = app;

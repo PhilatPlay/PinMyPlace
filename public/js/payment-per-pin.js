@@ -40,7 +40,121 @@ function proceedToPayment() {
     document.getElementById("paymentSection").scrollIntoView({ behavior: 'smooth' });
 }
 
-// Submit payment and get QR code
+// Proceed to GCash payment
+async function proceedToGCashPayment() {
+    const phone = document.getElementById("customerPhone")?.value.trim();
+
+    if (!phone) {
+        showStatusInElement("paymentResult", "Please enter your mobile number", "error");
+        return;
+    }
+
+    if (!currentPinData) {
+        showStatusInElement("paymentResult", "Pin data missing. Please start over.", "error");
+        return;
+    }
+
+    // Show loading
+    showStatusInElement("paymentResult", "Creating payment link...", "info");
+
+    try {
+        const payload = {
+            locationName: currentPinData.locationName,
+            address: currentPinData.address,
+            latitude: currentPinData.latitude,
+            longitude: currentPinData.longitude,
+            correctedLatitude: currentPinData.correctedLatitude,
+            correctedLongitude: currentPinData.correctedLongitude,
+            customerPhone: phone
+        };
+
+        // If agent is logged in, include agent ID
+        if (typeof isAgent !== 'undefined' && isAgent && agentData) {
+            payload.agentId = agentData._id;
+        }
+
+        const response = await fetch('/api/pin/initiate-payment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Store the payment reference for later use
+            sessionStorage.setItem('paymentReference', result.referenceNumber);
+
+            // Open PayMongo in a NEW WINDOW
+            const paymentWindow = window.open(result.paymentLink, '_blank', 'width=600,height=800');
+
+            // Show message to user
+            showStatusInElement("paymentResult", "Payment window opened! Complete payment there, then click the button below to get your QR code.", "info");
+
+            // Add a button to check payment status
+            const checkButton = document.createElement('button');
+            checkButton.textContent = '📍 Get my QR Code';
+            checkButton.className = 'register-btn';
+            checkButton.style.marginTop = '10px';
+            checkButton.onclick = function () {
+                verifyPaymentStatus(result.referenceNumber);
+            };
+            document.getElementById("paymentResult").appendChild(checkButton);
+        } else {
+            showStatusInElement("paymentResult", `Error: ${result.error || 'Failed to create payment'}`, "error");
+        }
+    } catch (error) {
+        console.error('Payment initiation error:', error);
+        showStatusInElement("paymentResult", "Connection error. Please try again.", "error");
+    }
+}
+
+// Verify payment status and show QR code
+async function verifyPaymentStatus(refId) {
+    try {
+        showStatusInElement("paymentResult", "Verifying payment...", "info");
+
+        const agentData = localStorage.getItem('agentData');
+        const agentId = agentData ? JSON.parse(agentData)._id : null;
+
+        const response = await fetch('/api/pin/create-with-payment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                paymentReferenceId: refId,
+                agentId: agentId
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Clear sessionStorage
+            sessionStorage.removeItem('paymentReference');
+
+            // Hide payment section and show QR section
+            document.getElementById('paymentSection').style.display = 'none';
+            document.getElementById('qrSection').style.display = 'block';
+
+            // Display the QR code
+            displayQRCode(result);
+
+            // Scroll to QR section
+            document.getElementById('qrSection').scrollIntoView({ behavior: 'smooth' });
+        } else {
+            showStatusInElement("paymentResult", `Payment not yet confirmed: ${result.error || 'Please try again'}`, "error");
+        }
+    } catch (error) {
+        console.error('Payment verification error:', error);
+        showStatusInElement("paymentResult", "Connection error. Please try again.", "error");
+    }
+}
+
+// Submit payment and get QR code (legacy - keeping for backward compatibility)
 async function submitPaymentAndGetQR() {
     const gcashRef = document.getElementById("gcashReference")?.value.trim();
     const phone = document.getElementById("customerPhone")?.value.trim();

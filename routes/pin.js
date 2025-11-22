@@ -3,7 +3,31 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const Pin = require('../models/Pin');
-const { createGCashPayment, verifyPayment } = require('../services/paymentService');
+const { createGCashPayment, verifyPayment, handleWebhook } = require('../services/paymentService');
+
+// PayMongo Webhook endpoint
+router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    try {
+        const event = JSON.parse(req.body.toString());
+
+        console.log('PayMongo webhook received:', event.data?.attributes?.type);
+
+        const webhookData = handleWebhook(event);
+
+        if (webhookData && webhookData.type === 'payment_success') {
+            // Payment was successful - could trigger additional actions here
+            // For now, we'll just log it since we verify on demand
+            console.log('Payment successful via webhook:', webhookData.referenceNumber);
+        }
+
+        // Always respond with 200 to acknowledge receipt
+        res.status(200).json({ received: true });
+    } catch (error) {
+        console.error('Webhook processing error:', error);
+        res.status(400).json({ error: 'Webhook processing failed' });
+    }
+});
+
 
 // Configure multer for payment proofs
 const storage = multer.diskStorage({
@@ -63,15 +87,28 @@ router.post('/initiate-payment', async (req, res) => {
         // Generate reference number for tracking
         const referenceNumber = 'PIN-' + Date.now().toString().slice(-8);
 
+        // Prepare metadata with all pin data
+        const metadata = {
+            referenceNumber,
+            customerPhone,
+            locationName,
+            address: address || '',
+            latitude: latitude.toString(),
+            longitude: longitude.toString(),
+            correctedLatitude: correctedLatitude.toString(),
+            correctedLongitude: correctedLongitude.toString()
+        };
+
+        // Build success URL with the payment reference (will be appended after payment)
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        const successUrl = `${baseUrl}/payment-success.html`;
+
         // Create payment link via PayMongo
         const payment = await createGCashPayment(
-            50, // ₱50
+            100, // ₱100 (PayMongo minimum)
             `PinMyPlace - GPS Pin for ${locationName}`,
-            {
-                referenceNumber,
-                customerPhone,
-                locationName
-            }
+            metadata,
+            successUrl
         );
 
         if (!payment.success) {
@@ -81,19 +118,29 @@ router.post('/initiate-payment', async (req, res) => {
             });
         }
 
+        // Store pin data temporarily in a "pending" pin record
+        // This will be updated to "verified" after payment confirmation
+        const pendingPin = new Pin({
+            pinId: generatePinId(),
+            locationName,
+            customerPhone,
+            address: address || '',
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude),
+            correctedLatitude: parseFloat(correctedLatitude),
+            correctedLongitude: parseFloat(correctedLongitude),
+            paymentAmount: 100,
+            paymentReferenceId: payment.referenceNumber,
+            paymentStatus: 'pending',
+            qrCode: generateQRCode()
+        });
+
+        await pendingPin.save();
+
         res.json({
             success: true,
             paymentLink: payment.paymentLink,
-            referenceNumber: payment.referenceNumber,
-            pinData: {
-                locationName,
-                address,
-                latitude,
-                longitude,
-                correctedLatitude,
-                correctedLongitude,
-                customerPhone
-            }
+            referenceNumber: payment.referenceNumber
         });
     } catch (error) {
         console.error('Payment initiation error:', error);
@@ -108,80 +155,81 @@ router.post('/initiate-payment', async (req, res) => {
 router.post('/create-with-payment', async (req, res) => {
     try {
         const {
-            gcashReference,
-            referenceNumber,
-            locationName,
-            address,
-            latitude,
-            longitude,
-            correctedLatitude,
-            correctedLongitude,
-            customerPhone,
-            amount,
+            paymentReferenceId,
             agentId // Optional - if sold by agent
         } = req.body;
 
-        // Validate required fields
-        if (!gcashReference || !referenceNumber || !locationName || !latitude || !longitude ||
-            !correctedLatitude || !correctedLongitude || !customerPhone) {
+        // Validate payment reference
+        if (!paymentReferenceId) {
             return res.status(400).json({
                 success: false,
-                error: 'Missing required fields'
+                error: 'Payment reference is required'
             });
         }
 
-        // Check if GCash reference was already used (prevent duplicate payments)
-        const existingPin = await Pin.findOne({ gcashReference: gcashReference });
-        if (existingPin) {
+        // Verify payment with PayMongo
+        const paymentVerification = await verifyPayment(paymentReferenceId);
+
+        console.log('Payment verification result:', JSON.stringify(paymentVerification, null, 2));
+
+        if (!paymentVerification.success || !paymentVerification.isPaid) {
             return res.status(400).json({
                 success: false,
-                error: 'This GCash reference number has already been used. Each payment can only create one pin.'
+                error: 'Payment not confirmed. Please complete payment first.',
+                debug: paymentVerification
             });
         }
 
-        // Generate IDs
-        const pinId = generatePinId();
-        const qrCode = generateQRCode();
+        // Find the pending pin we created earlier
+        const pin = await Pin.findOne({ paymentReferenceId });
 
-        // Create pin record
-        const pin = new Pin({
-            pinId,
-            locationName,
-            customerPhone,
-            address: address || '',
-            latitude: parseFloat(latitude),
-            longitude: parseFloat(longitude),
-            correctedLatitude: parseFloat(correctedLatitude),
-            correctedLongitude: parseFloat(correctedLongitude),
-            paymentAmount: parseInt(amount) || 50,
-            gcashReference: gcashReference,
-            referenceNumber,
-            paymentStatus: 'pending', // Pending manual verification
-            qrCode,
-            soldByAgent: agentId || null,
-            agentCommission: agentId ? 25 : 0
-        });
+        if (!pin) {
+            return res.status(404).json({
+                success: false,
+                error: 'Pin not found. Please create a new pin.'
+            });
+        }
 
-        // Calculate correction distance
-        pin.correctionDistance = pin.calculateCorrectionDistance();
+        // Check if already verified
+        if (pin.paymentStatus === 'verified') {
+            return res.json({
+                success: true,
+                message: 'Pin already verified',
+                pin: {
+                    pinId: pin.pinId,
+                    qrCode: pin.qrCode,
+                    locationName: pin.locationName,
+                    address: pin.address,
+                    correctedLatitude: pin.correctedLatitude,
+                    correctedLongitude: pin.correctedLongitude,
+                    createdAt: pin.createdAt,
+                    expiresAt: pin.expiresAt
+                }
+            });
+        }
 
-        await pin.save();
+        // Update pin status to verified and add agent if provided
+        pin.paymentStatus = 'verified';
+        if (agentId) {
+            pin.soldByAgent = agentId;
+            pin.agentCommission = 50;
+        }
 
-        // If sold by agent, update agent stats
+        await pin.save();        // If sold by agent, update agent stats
         if (agentId) {
             const Agent = require('../models/Agent');
             await Agent.findByIdAndUpdate(agentId, {
                 $inc: {
                     totalPinsSold: 1,
-                    totalEarnings: 25,
-                    pendingCommission: 25
+                    totalEarnings: 50,
+                    pendingCommission: 50
                 }
             });
         }
 
         res.status(201).json({
             success: true,
-            message: 'Pin created successfully! Your payment will be verified within 1 hour.',
+            message: 'Pin created successfully!',
             pin: {
                 pinId: pin.pinId,
                 qrCode: pin.qrCode,

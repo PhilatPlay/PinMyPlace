@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PinMyPlace - ₱50 Instant GPS Pin for Deliveries</title>
+    <title>PinMyPlace - ₱100 Instant GPS Pin for Deliveries</title>
 
     <!-- External CSS -->
     <link
@@ -22,7 +22,7 @@
       <!-- Header -->
       <div class="header">
         <h1>📍 PinMyPlace</h1>
-        <p>Instant GPS Pin for Easy Deliveries - Only ₱50!</p>
+        <p>Instant GPS Pin for Easy Deliveries - Only ₱100!</p>
         <p style="font-size: 14px; margin-top: 10px">
           <a
             href="#"
@@ -47,9 +47,7 @@
               <strong>Pin Your Location</strong> - Drag the marker to your exact
               address
             </li>
-            <li>
-              <strong>Pay ₱50 via GCash</strong> - Quick and secure payment
-            </li>
+            <li><strong>Pay ₱100</strong> - GCash, Maya, GrabPay, or Card</li>
             <li>
               <strong>Get Your QR Code</strong> - Share with delivery riders
               instantly!
@@ -77,16 +75,8 @@
             >
           </div>
 
-          <button
-            id="mapLoadButton"
-            onclick="initializeMap()"
-            style="background: #28a745 !important"
-          >
-            🗺️ Show Map & Get My Location
-          </button>
-
-          <!-- Address field (appears after map loads) -->
-          <div id="addressSection" style="display: none">
+          <!-- Address field -->
+          <div id="addressSection">
             <div class="form-group">
               <label>Street Address/Landmarks (optional):</label>
               <input
@@ -103,8 +93,8 @@
           <div id="mapContainer" style="position: relative">
             <div id="map"></div>
 
-            <!-- Map Controls (appears after map loads) -->
-            <div id="mapControls" style="display: none">
+            <!-- Map Controls -->
+            <div id="mapControls">
               <div
                 style="
                   background: #fff3cd;
@@ -127,65 +117,77 @@
               <button
                 onclick="proceedToPayment()"
                 class="register-btn"
-                style="background: #ff6b00 !important"
+                style="background: #28a745 !important"
               >
-                💰 Next: Pay ₱50 & Get QR Code →
+                💰 Next: Pay ₱100 & Get QR Code →
               </button>
+
+              <div
+                style="
+                  text-align: center;
+                  margin-top: 10px;
+                  font-size: 12px;
+                  color: #666;
+                "
+              >
+                <div>
+                  💳 Accepts: <strong>GCash • Maya • GrabPay • Cards</strong>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Payment Section (appears after pin is set) -->
         <div class="card" id="paymentSection" style="display: none">
-          <h3>💳 Step 2: Pay ₱50 via GCash</h3>
+          <h3>💳 Step 2: Pay ₱100</h3>
+          <p style="color: #666; margin-bottom: 20px">
+            Choose your payment method: GCash, Maya (PayMaya), GrabPay, or
+            Credit/Debit Card
+          </p>
+
+          <div class="form-group">
+            <label>Your Mobile Number:</label>
+            <input type="tel" id="customerPhone" placeholder="09XX-XXX-XXXX" />
+            <small style="color: #666">
+              For verification and notifications
+            </small>
+          </div>
+
+          <button onclick="proceedToGCashPayment()" class="register-btn">
+            💰 Pay ₱100 Now
+          </button>
 
           <div
             style="
-              background: #fff3cd;
-              padding: 15px;
-              border-radius: 8px;
+              text-align: center;
               margin: 15px 0;
+              padding: 12px;
+              background: #f8f9fa;
+              border-radius: 8px;
+              border: 1px solid #dee2e6;
             "
           >
-            <h4 style="margin-bottom: 10px">GCash Payment Instructions:</h4>
-            <ol style="line-height: 1.8">
-              <li>Open your GCash app</li>
-              <li>
-                Send <strong>₱50</strong> to:
-                <strong style="font-size: 18px; color: #ff6b00"
-                  >09XX-XXX-XXXX</strong
-                >
-              </li>
-              <li>Reference: <strong id="paymentRefNumber">-</strong></li>
-              <li>Take a screenshot of the payment confirmation</li>
-              <li>Upload it below</li>
-            </ol>
+            <div style="color: #666; font-size: 12px; margin-bottom: 8px">
+              💳 Accepted Payment Methods:
+            </div>
+            <div
+              style="
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 20px;
+                flex-wrap: wrap;
+                font-weight: 600;
+                font-size: 14px;
+              "
+            >
+              <span style="color: #007aff">💙 GCash</span>
+              <span style="color: #00d632">💚 Maya</span>
+              <span style="color: #00b14f">🟢 GrabPay</span>
+              <span style="color: #6c757d">💳 Cards</span>
+            </div>
           </div>
-
-          <div class="form-group">
-            <label>📱 GCash Reference Number:</label>
-            <input
-              type="text"
-              id="gcashReference"
-              placeholder="e.g., 1234567890123"
-              maxlength="13"
-            />
-            <small style="color: #666">
-              Enter the 13-digit reference number from your GCash payment
-            </small>
-          </div>
-
-          <div class="form-group">
-            <label>Your Mobile Number (for verification):</label>
-            <input type="tel" id="customerPhone" placeholder="09XX-XXX-XXXX" />
-            <small style="color: #666">
-              We'll verify this matches your GCash account
-            </small>
-          </div>
-
-          <button onclick="submitPaymentAndGetQR()" class="register-btn">
-            ✅ Verify Payment & Get My QR Code
-          </button>
 
           <div id="paymentResult"></div>
         </div>
@@ -279,7 +281,7 @@
               <li>Show this QR to delivery riders when ordering</li>
               <li>They scan it to get GPS directions to your exact location</li>
               <li>Valid for 90 days from today</li>
-              <li>Need to renew? Just pay another ₱50!</li>
+              <li>Need to renew? Just pay another ₱100!</li>
             </ul>
           </div>
 
@@ -475,7 +477,7 @@
         <div class="card">
           <h3>⚡ Quick Generate Pin for Customer</h3>
           <p style="color: #666; margin-bottom: 15px">
-            Help your customer create their pin and collect ₱50 cash
+            Help your customer create their pin and collect ₱100 cash
           </p>
 
           <button
@@ -495,7 +497,7 @@
           >
             <strong>💰 You earn ₱25 per pin!</strong><br />
             <small
-              >Collect ₱50 from customer in cash. You keep ₱25 commission
+              >Collect ₱100 from customer in cash. You keep ₱50 commission
               automatically.</small
             >
           </div>
@@ -534,5 +536,11 @@
     <script src="/js/map.js"></script>
     <script src="/js/payment-per-pin.js"></script>
     <script src="/js/agent.js"></script>
+    <script>
+      // Auto-initialize map when page loads
+      window.addEventListener("DOMContentLoaded", function () {
+        initializeMap();
+      });
+    </script>
   </body>
 </html>
