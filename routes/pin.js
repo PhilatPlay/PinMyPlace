@@ -2,28 +2,85 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
+const crypto = require('crypto');
+const validator = require('validator');
+const rateLimit = require('express-rate-limit');
 const Pin = require('../models/Pin');
 const { createGCashPayment, verifyPayment, handleWebhook } = require('../services/paymentService');
+const { createStripePayment, verifyStripePayment, handleStripeWebhook } = require('../services/stripeService');
+const { createXenditPayment, verifyXenditPayment, handleXenditWebhook } = require('../services/xenditService');
+const { getCurrency } = require('../config/currencies');
 
-// PayMongo Webhook endpoint
+// Rate limiters - generous limits for agents serving multiple customers
+const paymentLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // 100 payment initiations per IP (allows agents to serve customers in line)
+    message: { success: false, error: 'Too many payment requests. Please try again in 15 minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const verificationLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    max: 100, // 100 verification attempts per IP
+    message: { success: false, error: 'Too many verification attempts. Please try again in 5 minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Input validation helpers
+function isValidPhone(phone) {
+    // Accept any phone number with 7-15 digits (international standard)
+    // Allows: +1234567890, 09171234567, 1234567890, etc.
+    const cleaned = phone.replace(/[\s\-().]/g, '');
+    return /^\+?\d{7,15}$/.test(cleaned);
+}
+
+function isValidCoordinates(lat, lng) {
+    // Valid global coordinates
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lng);
+    return !isNaN(latitude) && !isNaN(longitude) &&
+        latitude >= -90 && latitude <= 90 &&
+        longitude >= -180 && longitude <= 180;
+}
+
+function sanitizeInput(input) {
+    if (!input) return '';
+    return validator.escape(validator.trim(input.toString()));
+}
+
+// PayMongo Webhook endpoint with signature verification
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
     try {
-        const event = JSON.parse(req.body.toString());
+        const signature = req.headers['paymongo-signature'];
+        const webhookSecret = process.env.PAYMONGO_WEBHOOK_SECRET;
 
+        // Verify webhook signature if secret is configured
+        if (webhookSecret) {
+            const expectedSignature = crypto
+                .createHmac('sha256', webhookSecret)
+                .update(req.body)
+                .digest('hex');
+
+            if (signature !== expectedSignature) {
+                console.error('Invalid webhook signature');
+                return res.status(401).json({ error: 'Invalid signature' });
+            }
+        }
+
+        const event = JSON.parse(req.body.toString());
         console.log('PayMongo webhook received:', event.data?.attributes?.type);
 
         const webhookData = handleWebhook(event);
 
         if (webhookData && webhookData.type === 'payment_success') {
-            // Payment was successful - could trigger additional actions here
-            // For now, we'll just log it since we verify on demand
             console.log('Payment successful via webhook:', webhookData.referenceNumber);
         }
 
-        // Always respond with 200 to acknowledge receipt
         res.status(200).json({ received: true });
     } catch (error) {
-        console.error('Webhook processing error:', error);
+        console.error('Webhook processing error:', error.message);
         res.status(400).json({ error: 'Webhook processing failed' });
     }
 });
@@ -62,8 +119,8 @@ function generateQRCode() {
     return 'QR-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6).toUpperCase();
 }
 
-// Initiate payment (creates payment link)
-router.post('/initiate-payment', async (req, res) => {
+// Initiate payment (creates payment link) - with rate limiting
+router.post('/initiate-payment', paymentLimiter, async (req, res) => {
     try {
         const {
             locationName,
@@ -72,7 +129,8 @@ router.post('/initiate-payment', async (req, res) => {
             longitude,
             correctedLatitude,
             correctedLongitude,
-            customerPhone
+            customerPhone,
+            currency // Optional currency code (defaults to PHP)
         } = req.body;
 
         // Validate required fields
@@ -84,15 +142,43 @@ router.post('/initiate-payment', async (req, res) => {
             });
         }
 
+        // Validate phone number (international format)
+        if (!isValidPhone(customerPhone)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid phone number. Please enter a valid phone number with country code.'
+            });
+        }
+
+        // Validate coordinates are valid
+        if (!isValidCoordinates(latitude, longitude) ||
+            !isValidCoordinates(correctedLatitude, correctedLongitude)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid GPS coordinates. Please check your location.'
+            });
+        }
+
+        // Sanitize text inputs
+        const sanitizedLocationName = sanitizeInput(locationName);
+        const sanitizedAddress = sanitizeInput(address);
+
+        if (sanitizedLocationName.length < 3 || sanitizedLocationName.length > 100) {
+            return res.status(400).json({
+                success: false,
+                error: 'Location name must be between 3 and 100 characters'
+            });
+        }
+
         // Generate reference number for tracking
         const referenceNumber = 'PIN-' + Date.now().toString().slice(-8);
 
-        // Prepare metadata with all pin data
+        // Prepare metadata with sanitized pin data
         const metadata = {
             referenceNumber,
             customerPhone,
-            locationName,
-            address: address || '',
+            locationName: sanitizedLocationName,
+            address: sanitizedAddress || '',
             latitude: latitude.toString(),
             longitude: longitude.toString(),
             correctedLatitude: correctedLatitude.toString(),
@@ -102,14 +188,43 @@ router.post('/initiate-payment', async (req, res) => {
         // Build success URL with the payment reference (will be appended after payment)
         const baseUrl = `${req.protocol}://${req.get('host')}`;
         const successUrl = `${baseUrl}/payment-success.html`;
+        const cancelUrl = `${baseUrl}?payment=cancelled`;
 
-        // Create payment link via PayMongo
-        const payment = await createGCashPayment(
-            100, // ₱100 (PayMongo minimum)
-            `PinMyPlace - GPS Pin for ${locationName}`,
-            metadata,
-            successUrl
-        );
+        // Get currency and amount
+        const currencyInfo = getCurrency(currency || 'PHP');
+        const paymentAmount = currencyInfo.price;
+
+        // Payment gateway routing:
+        // 1. Xendit for SE Asia e-wallets (PHP, IDR, THB, VND, MYR, SGD)
+        // 2. Stripe as fallback for international cards (USD and any other)
+        let payment;
+        let paymentGateway = 'xendit';
+
+        const xenditCurrencies = ['PHP', 'IDR', 'THB', 'VND', 'MYR', 'SGD'];
+
+        if (xenditCurrencies.includes(currencyInfo.code)) {
+            // Use Xendit for SE Asia (e-wallets + local payment methods)
+            paymentGateway = 'xendit';
+            payment = await createXenditPayment(
+                paymentAmount,
+                currencyInfo.code,
+                `PinMyPlace - GPS Pin for ${sanitizedLocationName}`,
+                metadata,
+                successUrl,
+                customerPhone
+            );
+        } else {
+            // Use Stripe for international currencies (USD, etc.)
+            paymentGateway = 'stripe';
+            payment = await createStripePayment(
+                paymentAmount,
+                currencyInfo.code,
+                `PinMyPlace - GPS Pin for ${sanitizedLocationName}`,
+                metadata,
+                successUrl,
+                cancelUrl
+            );
+        }
 
         if (!payment.success) {
             return res.status(500).json({
@@ -122,15 +237,17 @@ router.post('/initiate-payment', async (req, res) => {
         // This will be updated to "verified" after payment confirmation
         const pendingPin = new Pin({
             pinId: generatePinId(),
-            locationName,
+            locationName: sanitizedLocationName,
             customerPhone,
-            address: address || '',
+            address: sanitizedAddress || '',
             latitude: parseFloat(latitude),
             longitude: parseFloat(longitude),
             correctedLatitude: parseFloat(correctedLatitude),
             correctedLongitude: parseFloat(correctedLongitude),
-            paymentAmount: 100,
-            paymentReferenceId: payment.referenceNumber,
+            paymentAmount: paymentAmount,
+            paymentMethod: currencyInfo.code,
+            // Store chargeId for Xendit, sessionId for Stripe, referenceNumber for PayMongo
+            paymentReferenceId: payment.chargeId || payment.sessionId || payment.referenceNumber,
             paymentStatus: 'pending',
             qrCode: generateQRCode()
         });
@@ -140,10 +257,17 @@ router.post('/initiate-payment', async (req, res) => {
         res.json({
             success: true,
             paymentLink: payment.paymentLink,
-            referenceNumber: payment.referenceNumber
+            // Return chargeId for Xendit, sessionId for Stripe, referenceNumber for PayMongo
+            referenceNumber: payment.chargeId || payment.sessionId || payment.referenceNumber,
+            amount: paymentAmount,
+            currency: currencyInfo.code,
+            currencySymbol: currencyInfo.symbol,
+            gateway: paymentGateway,
+            paymentMethod: payment.channelCode, // For Xendit (GCASH, OVO, etc.)
+            expiresIn: '24 hours' // Payment link expires after 24 hours
         });
     } catch (error) {
-        console.error('Payment initiation error:', error);
+        console.error('Payment initiation error:', error.message);
         res.status(500).json({
             success: false,
             error: 'Failed to initiate payment'
@@ -151,13 +275,15 @@ router.post('/initiate-payment', async (req, res) => {
     }
 });
 
-// Create pin with payment (no login required)
-router.post('/create-with-payment', async (req, res) => {
+// Create pin with payment (no login required) - with rate limiting
+router.post('/create-with-payment', verificationLimiter, async (req, res) => {
     try {
         const {
             paymentReferenceId,
             agentId // Optional - if sold by agent
         } = req.body;
+
+        console.log('Verification request:', { paymentReferenceId, agentId });
 
         // Validate payment reference
         if (!paymentReferenceId) {
@@ -167,26 +293,27 @@ router.post('/create-with-payment', async (req, res) => {
             });
         }
 
-        // Verify payment with PayMongo
-        const paymentVerification = await verifyPayment(paymentReferenceId);
-
-        console.log('Payment verification result:', JSON.stringify(paymentVerification, null, 2));
-
-        if (!paymentVerification.success || !paymentVerification.isPaid) {
-            return res.status(400).json({
-                success: false,
-                error: 'Payment not confirmed. Please complete payment first.',
-                debug: paymentVerification
-            });
-        }
-
-        // Find the pending pin we created earlier
+        // Find the pending pin first
         const pin = await Pin.findOne({ paymentReferenceId });
+
+        console.log('Found pin:', pin ? `ID: ${pin.pinId}, Status: ${pin.paymentStatus}, Method: ${pin.paymentMethod}` : 'NOT FOUND');
 
         if (!pin) {
             return res.status(404).json({
                 success: false,
-                error: 'Pin not found. Please create a new pin.'
+                error: 'Pin not found or payment link expired. Please create a new pin.'
+            });
+        }
+
+        // Check if pin is too old (24 hours)
+        const pinAge = Date.now() - new Date(pin.createdAt).getTime();
+        const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+
+        if (pinAge > maxAge && pin.paymentStatus === 'pending') {
+            await Pin.deleteOne({ _id: pin._id });
+            return res.status(410).json({
+                success: false,
+                error: 'Payment link expired. Please create a new pin.'
             });
         }
 
@@ -205,6 +332,25 @@ router.post('/create-with-payment', async (req, res) => {
                     createdAt: pin.createdAt,
                     expiresAt: pin.expiresAt
                 }
+            });
+        }
+
+        // Verify payment with appropriate gateway
+        let paymentVerification;
+        const xenditCurrencies = ['PHP', 'IDR', 'THB', 'VND', 'MYR', 'SGD'];
+
+        if (xenditCurrencies.includes(pin.paymentMethod)) {
+            // SE Asia currencies use Xendit - use the stored invoice ID
+            paymentVerification = await verifyXenditPayment(pin.paymentReferenceId);
+        } else {
+            // International currencies use Stripe - use the stored session ID
+            paymentVerification = await verifyStripePayment(pin.paymentReferenceId);
+        }
+
+        if (!paymentVerification.success || !paymentVerification.isPaid) {
+            return res.status(400).json({
+                success: false,
+                error: 'Payment not confirmed. Please complete payment first.'
             });
         }
 

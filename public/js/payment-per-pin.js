@@ -3,6 +3,42 @@
 let currentPinData = null;
 let paymentReferenceNumber = null;
 
+// Currency information
+const CURRENCIES = {
+    PHP: { symbol: '₱', price: 100, name: 'PHP 100' },
+    MYR: { symbol: 'RM', price: 10, name: 'RM 10' },
+    SGD: { symbol: 'S$', price: 3, name: 'S$ 3' },
+    THB: { symbol: '฿', price: 70, name: '฿ 70' },
+    IDR: { symbol: 'Rp', price: 32000, name: 'Rp 32,000' },
+    VND: { symbol: '₫', price: 50000, name: '₫ 50,000' },
+    USD: { symbol: '$', price: 2, name: '$ 2' }
+};
+
+// Update payment amount display when currency changes
+function updatePaymentAmount() {
+    const currency = document.getElementById("currencySelect")?.value || 'PHP';
+    const currencyInfo = CURRENCIES[currency];
+    const amountDisplay = document.getElementById("paymentAmount");
+    const button = document.getElementById("payButton");
+
+    if (amountDisplay) {
+        amountDisplay.textContent = `${currencyInfo.symbol}${currencyInfo.price.toLocaleString()}`;
+    }
+    if (button) {
+        button.innerHTML = `💰 Pay ${currencyInfo.name} Now`;
+    }
+}// Auto-detect currency based on user's coordinates
+function detectCurrency(lat, lng) {
+    // Rough geographic detection for SE Asia
+    if (lat >= 4 && lat <= 21 && lng >= 116 && lng <= 127) return 'PHP'; // Philippines
+    if (lat >= 1 && lat <= 7 && lng >= 100 && lng <= 120) return 'MYR'; // Malaysia
+    if (lat >= 1.2 && lat <= 1.5 && lng >= 103.6 && lng <= 104) return 'SGD'; // Singapore
+    if (lat >= 5 && lat <= 20 && lng >= 97 && lng <= 106) return 'THB'; // Thailand
+    if (lat >= -11 && lat <= 6 && lng >= 95 && lng <= 141) return 'IDR'; // Indonesia
+    if (lat >= 8 && lat <= 24 && lng >= 102 && lng <= 110) return 'VND'; // Vietnam
+    return 'PHP'; // Default
+}
+
 // Proceed to payment after pin is set
 function proceedToPayment() {
     if (!correctedPosition || !originalPosition) {
@@ -36,13 +72,22 @@ function proceedToPayment() {
     document.getElementById("paymentSection").style.display = "block";
     document.getElementById("paymentRefNumber").textContent = paymentReferenceNumber;
 
+    // Auto-detect and set currency based on coordinates
+    const detectedCurrency = detectCurrency(correctedPosition.lat, correctedPosition.lng);
+    const currencySelect = document.getElementById("currencySelect");
+    if (currencySelect) {
+        currencySelect.value = detectedCurrency;
+        updatePaymentAmount();
+    }
+
     // Scroll to payment section
     document.getElementById("paymentSection").scrollIntoView({ behavior: 'smooth' });
 }
 
-// Proceed to GCash payment
+// Proceed to payment with selected currency
 async function proceedToGCashPayment() {
     const phone = document.getElementById("customerPhone")?.value.trim();
+    const currency = document.getElementById("currencySelect")?.value || 'PHP';
 
     if (!phone) {
         showStatusInElement("paymentResult", "Please enter your mobile number", "error");
@@ -65,7 +110,8 @@ async function proceedToGCashPayment() {
             longitude: currentPinData.longitude,
             correctedLatitude: currentPinData.correctedLatitude,
             correctedLongitude: currentPinData.correctedLongitude,
-            customerPhone: phone
+            customerPhone: phone,
+            currency: currency
         };
 
         // If agent is logged in, include agent ID
@@ -86,12 +132,23 @@ async function proceedToGCashPayment() {
         if (result.success) {
             // Store the payment reference for later use
             sessionStorage.setItem('paymentReference', result.referenceNumber);
+            sessionStorage.setItem('paymentTimestamp', Date.now().toString());
 
             // Open PayMongo in a NEW WINDOW
             const paymentWindow = window.open(result.paymentLink, '_blank', 'width=600,height=800');
 
-            // Show message to user
-            showStatusInElement("paymentResult", "Payment window opened! Complete payment there, then click the button below to get your QR code.", "info");
+            // Show message to user with timeout warning
+            const expiryTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString('en-PH', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            showStatusInElement("paymentResult",
+                `Payment window opened! Complete payment there, then click the button below to get your QR code.<br>` +
+                `<small style="color: #856404;">⏰ Payment link expires: ${expiryTime}</small>`,
+                "info");
 
             // Add a button to check payment status
             const checkButton = document.createElement('button');

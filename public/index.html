@@ -140,22 +140,57 @@
 
         <!-- Payment Section (appears after pin is set) -->
         <div class="card" id="paymentSection" style="display: none">
-          <h3>💳 Step 2: Pay ₱100</h3>
+          <h3>💳 Step 2: Pay <span id="paymentAmount">₱100</span></h3>
           <p style="color: #666; margin-bottom: 20px">
             Choose your payment method: GCash, Maya (PayMaya), GrabPay, or
             Credit/Debit Card
           </p>
 
           <div class="form-group">
-            <label>Your Mobile Number:</label>
-            <input type="tel" id="customerPhone" placeholder="09XX-XXX-XXXX" />
+            <label>Select Currency:</label>
+            <select
+              id="currencySelect"
+              onchange="updatePaymentAmount()"
+              style="
+                width: 100%;
+                padding: 12px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                font-size: 16px;
+              "
+            >
+              <option value="PHP">🇵🇭 Philippine Peso (₱100)</option>
+              <option value="MYR">🇲🇾 Malaysian Ringgit (RM10)</option>
+              <option value="SGD">🇸🇬 Singapore Dollar (S$3)</option>
+              <option value="THB">🇹🇭 Thai Baht (฿70)</option>
+              <option value="IDR">🇮🇩 Indonesian Rupiah (Rp32,000)</option>
+              <option value="VND">🇻🇳 Vietnamese Dong (₫50,000)</option>
+              <option value="USD">🌏 US Dollar ($2)</option>
+            </select>
             <small style="color: #666">
-              For verification and notifications
+              Select your preferred currency (prices are equivalent to ~$2 USD)
             </small>
           </div>
 
-          <button onclick="proceedToGCashPayment()" class="register-btn">
-            💰 Pay ₱100 Now
+          <div class="form-group">
+            <label>Your Mobile Number:</label>
+            <input
+              type="tel"
+              id="customerPhone"
+              placeholder="+60123456789 or 09171234567"
+            />
+            <small style="color: #666">
+              For verification and notifications (include country code if
+              outside PH)
+            </small>
+          </div>
+
+          <button
+            onclick="proceedToGCashPayment()"
+            class="register-btn"
+            id="payButton"
+          >
+            💰 Pay PHP 100 Now
           </button>
 
           <div
@@ -522,11 +557,11 @@
         "
       >
         <p>
-          <strong>PinMyPlace</strong> - Making deliveries easier in the
-          Philippines 🇵🇭
+          <strong>PinMyPlace</strong> - Making deliveries easier across
+          Southeast Asia 🌏
         </p>
         <p style="font-size: 13px; margin-top: 10px">
-          Questions? Contact us: 09XX-XXX-XXXX | support@pinmyplace.ph
+          Questions? Contact us: support@pinmyplace.com
         </p>
       </div>
     </div>

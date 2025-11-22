@@ -1,10 +1,11 @@
 const axios = require('axios');
+const { getCurrency } = require('../config/currencies');
 
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 const PAYMONGO_API_URL = 'https://api.paymongo.com/v1';
 
-// Create GCash payment link
-async function createGCashPayment(amount, description, metadata = {}, successUrl = null) {
+// Create payment link with multi-currency support
+async function createGCashPayment(amount, description, metadata = {}, successUrl = null, currencyCode = 'PHP') {
     try {
         // Validate PayMongo key exists
         if (!PAYMONGO_SECRET_KEY) {
@@ -15,14 +16,16 @@ async function createGCashPayment(amount, description, metadata = {}, successUrl
             };
         }
 
+        // Get currency info
+        const currency = getCurrency(currencyCode);
         const auth = Buffer.from(PAYMONGO_SECRET_KEY).toString('base64');
 
         const attributes = {
-            amount: amount * 100, // Convert to cents
+            amount: Math.round(amount * 100), // Convert to cents/smallest unit
             description: description,
             remarks: metadata.referenceNumber || 'PinMyPlace Payment',
             payment_method_types: ['gcash', 'paymaya', 'grab_pay', 'card'], // Multiple payment options
-            metadata: metadata // Store pin data for later retrieval
+            metadata: { ...metadata, currency: currencyCode } // Store currency in metadata
         };
 
         // Add success URL if provided
