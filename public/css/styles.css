@@ -1,0 +1,358 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  color: #333;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  text-align: center;
+  color: white;
+  margin-bottom: 30px;
+}
+
+.card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+input,
+button,
+select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.2s;
+  margin-top: 10px;
+}
+
+button:hover {
+  transform: translateY(-2px);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.result {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+  font-family: monospace;
+  font-size: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* Status Messages */
+.status {
+  padding: 10px;
+  border-radius: 5px;
+  margin: 10px 0;
+}
+
+.success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.error {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.info {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.warning {
+  background: #fff3cd;
+  color: #856404;
+}
+
+/* Map Styles */
+#map {
+  height: 400px;
+  width: 100%;
+  border-radius: 10px;
+  margin: 10px 0;
+}
+
+.map-instructions {
+  background: #e8f4fd;
+  border-left: 4px solid #007bff;
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.coordinate-display {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+  border: 1px solid #dee2e6;
+}
+
+.coordinate-display div {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.register-btn {
+  background: #28a745 !important;
+  font-size: 16px;
+  padding: 12px 24px;
+  margin: 15px 0;
+}
+
+.register-btn:hover {
+  background: #218838 !important;
+}
+
+#addressSection {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+  border: 1px solid #dee2e6;
+}
+
+#addressSection small {
+  display: block;
+  margin-top: 5px;
+  font-style: italic;
+}
+
+/* QR Code Responsive Styling */
+#qrCodeCanvas {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+#qrCodeCanvas img,
+#qrCodeCanvas canvas {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 8px;
+}
+
+/* Premium/Payment Styles */
+.pricing-card {
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.pricing-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 6px 12px rgba(102, 126, 234, 0.2);
+}
+
+.pricing-card.recommended {
+  border-color: #28a745;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.price {
+  font-size: 36px;
+  font-weight: bold;
+  color: #667eea;
+  margin: 15px 0;
+}
+
+.price-currency {
+  font-size: 18px;
+}
+
+.price-period {
+  font-size: 14px;
+  color: #666;
+}
+
+.features-list {
+  list-style: none;
+  padding: 20px 0;
+  text-align: left;
+}
+
+.features-list li {
+  padding: 8px 0;
+  position: relative;
+  padding-left: 25px;
+}
+
+.features-list li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #28a745;
+  font-weight: bold;
+}
+
+.upgrade-btn {
+  background: #28a745 !important;
+}
+
+.upgrade-btn:hover {
+  background: #218838 !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .container {
+    padding: 10px;
+  }
+
+  .card {
+    margin: 10px 0;
+  }
+
+  input,
+  button,
+  select {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  #map {
+    height: 300px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .coordinate-display {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .coordinate-display div {
+    margin: 6px 0;
+    word-break: break-all;
+  }
+
+  .map-instructions {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .register-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  #adminSection .card {
+    padding: 15px;
+  }
+
+  #adminSection input {
+    margin-bottom: 10px;
+  }
+
+  .result {
+    font-size: 11px;
+    max-height: 200px;
+    padding: 10px;
+  }
+
+  button[onclick="downloadQR()"] {
+    padding: 10px 16px;
+    font-size: 14px;
+    margin-top: 10px;
+  }
+
+  .price {
+    font-size: 28px;
+  }
+}
+
+/* Admin Section Desktop Layout */
+@media (min-width: 769px) {
+  #adminSection .grid {
+    grid-template-columns: 1fr;
+  }
+
+  #adminSection .card {
+    max-width: none;
+  }
+
+  .lookup-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin: 20px 0;
+  }
+
+  .lookup-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .lookup-group .form-group {
+    margin-bottom: 15px;
+  }
+
+  .lookup-group button {
+    margin-top: auto;
+    align-self: flex-start;
+    width: auto;
+    min-width: 200px;
+  }
+
+  .lookup-result-full {
+    grid-column: 1 / -1;
+    margin-top: 20px;
+  }
+}

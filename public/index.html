@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PinMyPlace - ₱50 Instant GPS Pin for Deliveries</title>
+
+    <!-- External CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link rel="stylesheet" href="/css/styles.css" />
+
+    <!-- External JavaScript Libraries -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <h1>📍 PinMyPlace</h1>
+        <p>Instant GPS Pin for Easy Deliveries - Only ₱50!</p>
+        <p style="font-size: 14px; margin-top: 10px">
+          <a
+            href="#"
+            onclick="showAgentLogin(); return false;"
+            style="color: white; text-decoration: underline"
+          >
+            Agent/Reseller Login
+          </a>
+        </p>
+      </div>
+
+      <!-- Main Pin Creation Section (No Login Required) -->
+      <div id="mainPinSection">
+        <!-- How It Works -->
+        <div
+          class="card"
+          style="background: #e8f4fd; border-left: 4px solid #007bff"
+        >
+          <h3>🎯 How It Works (3 Easy Steps)</h3>
+          <ol style="margin: 15px 0; padding-left: 20px; line-height: 1.8">
+            <li>
+              <strong>Pin Your Location</strong> - Drag the marker to your exact
+              address
+            </li>
+            <li>
+              <strong>Pay ₱50 via GCash</strong> - Quick and secure payment
+            </li>
+            <li>
+              <strong>Get Your QR Code</strong> - Share with delivery riders
+              instantly!
+            </li>
+          </ol>
+          <p style="margin-top: 15px; color: #666">
+            ✅ No registration needed &nbsp; | &nbsp; ✅ Valid for 90 days
+            &nbsp; | &nbsp; ✅ Renewable anytime
+          </p>
+        </div>
+
+        <!-- Main GPS Map Interface -->
+        <div class="card">
+          <h3>📍 Step 1: Pin Your Exact Location</h3>
+
+          <div class="form-group">
+            <label>Your Name/Location Label:</label>
+            <input
+              type="text"
+              id="locationName"
+              placeholder="e.g., Juan's House, Tindahan ni Maria"
+            />
+            <small style="color: #666"
+              >This helps you identify this pin later</small
+            >
+          </div>
+
+          <button
+            id="mapLoadButton"
+            onclick="initializeMap()"
+            style="background: #28a745 !important"
+          >
+            🗺️ Show Map & Get My Location
+          </button>
+
+          <!-- Address field (appears after map loads) -->
+          <div id="addressSection" style="display: none">
+            <div class="form-group">
+              <label>Street Address/Landmarks (optional):</label>
+              <input
+                type="text"
+                id="mapAddress"
+                placeholder="e.g., White gate, near Jollibee, beside sari-sari store"
+              />
+              <small style="color: #666"
+                >Help delivery riders find you easier</small
+              >
+            </div>
+          </div>
+
+          <div id="mapContainer" style="position: relative">
+            <div id="map"></div>
+
+            <!-- Map Controls (appears after map loads) -->
+            <div id="mapControls" style="display: none">
+              <div
+                style="
+                  background: #fff3cd;
+                  padding: 15px;
+                  border-radius: 8px;
+                  margin-bottom: 15px;
+                "
+              >
+                <strong>⚠️ Verify Your Location</strong>
+                <p style="margin: 5px 0; font-size: 14px">
+                  Drag the green marker to your exact delivery location. Once
+                  you pay, you'll get the shareable QR code.
+                </p>
+                <p style="margin: 5px 0; font-size: 13px; color: #856404">
+                  <strong>🔒 Security:</strong> GPS coordinates and QR code are
+                  only revealed after payment verification.
+                </p>
+              </div>
+
+              <button
+                onclick="proceedToPayment()"
+                class="register-btn"
+                style="background: #ff6b00 !important"
+              >
+                💰 Next: Pay ₱50 & Get QR Code →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Section (appears after pin is set) -->
+        <div class="card" id="paymentSection" style="display: none">
+          <h3>💳 Step 2: Pay ₱50 via GCash</h3>
+
+          <div
+            style="
+              background: #fff3cd;
+              padding: 15px;
+              border-radius: 8px;
+              margin: 15px 0;
+            "
+          >
+            <h4 style="margin-bottom: 10px">GCash Payment Instructions:</h4>
+            <ol style="line-height: 1.8">
+              <li>Open your GCash app</li>
+              <li>
+                Send <strong>₱50</strong> to:
+                <strong style="font-size: 18px; color: #ff6b00"
+                  >09XX-XXX-XXXX</strong
+                >
+              </li>
+              <li>Reference: <strong id="paymentRefNumber">-</strong></li>
+              <li>Take a screenshot of the payment confirmation</li>
+              <li>Upload it below</li>
+            </ol>
+          </div>
+
+          <div class="form-group">
+            <label>📱 GCash Reference Number:</label>
+            <input
+              type="text"
+              id="gcashReference"
+              placeholder="e.g., 1234567890123"
+              maxlength="13"
+            />
+            <small style="color: #666">
+              Enter the 13-digit reference number from your GCash payment
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Your Mobile Number (for verification):</label>
+            <input type="tel" id="customerPhone" placeholder="09XX-XXX-XXXX" />
+            <small style="color: #666">
+              We'll verify this matches your GCash account
+            </small>
+          </div>
+
+          <button onclick="submitPaymentAndGetQR()" class="register-btn">
+            ✅ Verify Payment & Get My QR Code
+          </button>
+
+          <div id="paymentResult"></div>
+        </div>
+
+        <!-- QR Code Result (appears after payment verified) -->
+        <div class="card" id="qrSection" style="display: none">
+          <div class="status success">
+            <h3>🎉 Success! Your Location is Pinned!</h3>
+            <p>
+              Here's your delivery QR code. Save it and share with delivery
+              riders!
+            </p>
+          </div>
+
+          <div
+            style="
+              background: #f8f9fa;
+              border-radius: 8px;
+              padding: 20px;
+              margin: 15px 0;
+              text-align: center;
+            "
+          >
+            <div id="qrDetails" style="margin-bottom: 15px"></div>
+
+            <div
+              id="qrCodeCanvas"
+              style="margin: 20px auto; display: inline-block"
+            ></div>
+
+            <div style="margin-top: 20px">
+              <button
+                onclick="downloadQR()"
+                style="
+                  background: #28a745;
+                  width: auto;
+                  padding: 12px 30px;
+                  margin: 5px;
+                "
+              >
+                📥 Download QR Code
+              </button>
+              <button
+                onclick="shareQR()"
+                style="
+                  background: #007bff;
+                  width: auto;
+                  padding: 12px 30px;
+                  margin: 5px;
+                "
+              >
+                📤 Share via Messenger
+              </button>
+            </div>
+
+            <div
+              style="
+                margin-top: 20px;
+                padding: 15px;
+                background: white;
+                border-radius: 8px;
+                border: 1px solid #ddd;
+              "
+            >
+              <strong>📱 Or share this link:</strong><br />
+              <input
+                type="text"
+                id="shareLink"
+                readonly
+                style="margin-top: 10px; font-size: 12px"
+              />
+              <button
+                onclick="copyShareLink()"
+                style="width: auto; padding: 8px 20px; margin-top: 10px"
+              >
+                📋 Copy Link
+              </button>
+            </div>
+          </div>
+
+          <div
+            style="
+              background: #fff3cd;
+              padding: 15px;
+              border-radius: 8px;
+              margin: 15px 0;
+            "
+          >
+            <strong>💡 How to Use Your QR Code:</strong>
+            <ul style="margin: 10px 0; padding-left: 20px">
+              <li>Show this QR to delivery riders when ordering</li>
+              <li>They scan it to get GPS directions to your exact location</li>
+              <li>Valid for 90 days from today</li>
+              <li>Need to renew? Just pay another ₱50!</li>
+            </ul>
+          </div>
+
+          <button onclick="createAnotherPin()" style="background: #667eea">
+            📍 Create Another Pin
+          </button>
+        </div>
+      </div>
+
+      <!-- Agent/Reseller Login Modal (Hidden by default) -->
+      <div class="modal" id="agentLoginModal" style="display: none">
+        <div
+          class="modal-content card"
+          style="max-width: 500px; margin: 50px auto"
+        >
+          <button
+            onclick="closeAgentLogin()"
+            style="
+              position: absolute;
+              top: 10px;
+              right: 10px;
+              width: auto;
+              padding: 5px 15px;
+            "
+          >
+            ✕
+          </button>
+
+          <h3>🏪 Agent/Reseller Login</h3>
+          <p>Login to access your agent dashboard and start selling pins!</p>
+
+          <div class="form-group">
+            <label>Email/Agent ID:</label>
+            <input type="text" id="agentEmail" placeholder="your@email.com" />
+          </div>
+
+          <div class="form-group">
+            <label>Password:</label>
+            <input
+              type="password"
+              id="agentPassword"
+              placeholder="Enter password"
+            />
+          </div>
+
+          <button onclick="agentLogin()">Login to Dashboard</button>
+          <div id="agentAuthStatus"></div>
+
+          <div
+            style="
+              margin-top: 20px;
+              padding: 15px;
+              background: #e8f4fd;
+              border-radius: 8px;
+            "
+          >
+            <strong>Want to become an agent?</strong><br />
+            <p style="margin: 10px 0">
+              Earn ₱25 for every pin you sell! Only ₱300/month to join.
+            </p>
+            <a
+              href="#"
+              onclick="showAgentSignup(); return false;"
+              style="color: #007bff"
+            >
+              Sign Up as Agent →
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agent Dashboard (Hidden, shows after login) -->
+      <div id="agentDashboard" style="display: none">
+        <div
+          class="card"
+          style="
+            background: #f8f9fa;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <div>
+            <strong id="agentName">Agent</strong>
+            <span
+              style="
+                margin-left: 10px;
+                background: #ff6b00;
+                color: white;
+                padding: 3px 10px;
+                border-radius: 3px;
+                font-size: 12px;
+              "
+              >🏪 AGENT</span
+            >
+          </div>
+          <button
+            onclick="agentLogout()"
+            style="width: auto; padding: 5px 15px; margin: 0; font-size: 13px"
+          >
+            Logout
+          </button>
+        </div>
+
+        <!-- Agent Stats -->
+        <div class="grid">
+          <div
+            class="card"
+            style="
+              text-align: center;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+            "
+          >
+            <h4>Pins Sold Today</h4>
+            <div
+              style="font-size: 48px; font-weight: bold; margin: 10px 0"
+              id="todaySales"
+            >
+              0
+            </div>
+            <p>Earnings: ₱<span id="todayEarnings">0</span></p>
+          </div>
+
+          <div
+            class="card"
+            style="
+              text-align: center;
+              background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+              color: white;
+            "
+          >
+            <h4>Total This Month</h4>
+            <div
+              style="font-size: 48px; font-weight: bold; margin: 10px 0"
+              id="monthSales"
+            >
+              0
+            </div>
+            <p>Earnings: ₱<span id="monthEarnings">0</span></p>
+          </div>
+        </div>
+
+        <!-- Commission Balance -->
+        <div
+          class="card"
+          style="
+            background: linear-gradient(135deg, #ff6b00 0%, #ff8c42 100%);
+            color: white;
+          "
+        >
+          <h3 style="color: white">💰 Commission Balance</h3>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-top: 15px;
+            "
+          >
+            <div>
+              <div style="font-size: 14px; opacity: 0.9">
+                Pending Commission
+              </div>
+              <div style="font-size: 32px; font-weight: bold; margin: 5px 0">
+                ₱<span id="pendingCommission">0</span>
+              </div>
+              <div style="font-size: 12px; opacity: 0.8">
+                Minimum payout: ₱100
+              </div>
+            </div>
+            <div>
+              <button
+                onclick="requestPayout()"
+                style="
+                  background: white;
+                  color: #ff6b00;
+                  padding: 12px 24px;
+                  border: none;
+                  border-radius: 5px;
+                  cursor: pointer;
+                  font-weight: bold;
+                "
+              >
+                Request Payout
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Generate Pin -->
+        <div class="card">
+          <h3>⚡ Quick Generate Pin for Customer</h3>
+          <p style="color: #666; margin-bottom: 15px">
+            Help your customer create their pin and collect ₱50 cash
+          </p>
+
+          <button
+            onclick="startAgentPinCreation()"
+            style="background: #28a745 !important; font-size: 16px"
+          >
+            📍 Start Creating Pin for Customer
+          </button>
+
+          <div
+            style="
+              margin-top: 15px;
+              padding: 15px;
+              background: #fff3cd;
+              border-radius: 8px;
+            "
+          >
+            <strong>💰 You earn ₱25 per pin!</strong><br />
+            <small
+              >Collect ₱50 from customer in cash. You keep ₱25 commission
+              automatically.</small
+            >
+          </div>
+        </div>
+
+        <!-- Agent Sales History -->
+        <div class="card">
+          <h3>📊 Your Sales History</h3>
+          <div id="agentSalesHistory">
+            <p style="color: #666">Loading sales history...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div
+        style="
+          text-align: center;
+          color: white;
+          margin-top: 30px;
+          padding: 20px;
+        "
+      >
+        <p>
+          <strong>PinMyPlace</strong> - Making deliveries easier in the
+          Philippines 🇵🇭
+        </p>
+        <p style="font-size: 13px; margin-top: 10px">
+          Questions? Contact us: 09XX-XXX-XXXX | support@pinmyplace.ph
+        </p>
+      </div>
+    </div>
+
+    <!-- Application JavaScript -->
+    <script src="/js/utils.js"></script>
+    <script src="/js/map.js"></script>
+    <script src="/js/payment-per-pin.js"></script>
+    <script src="/js/agent.js"></script>
+  </body>
+</html>
