@@ -195,12 +195,13 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
         const paymentAmount = currencyInfo.price;
 
         // Payment gateway routing:
-        // 1. Xendit for SE Asia e-wallets (PHP, IDR, THB, VND, MYR, SGD)
-        // 2. Stripe as fallback for international cards (USD and any other)
+        // 1. Xendit for SE Asia e-wallets (PHP, IDR, THB, MYR, SGD)
+        // 2. Stripe for currencies not yet activated in Xendit (VND, USD)
         let payment;
         let paymentGateway = 'xendit';
 
-        const xenditCurrencies = ['PHP', 'IDR', 'THB', 'VND', 'MYR', 'SGD'];
+        // Currencies enabled in Xendit account
+        const xenditCurrencies = ['PHP', 'IDR', 'THB', 'MYR', 'SGD'];
 
         if (xenditCurrencies.includes(currencyInfo.code)) {
             // Use Xendit for SE Asia (e-wallets + local payment methods)
@@ -337,7 +338,7 @@ router.post('/create-with-payment', verificationLimiter, async (req, res) => {
 
         // Verify payment with appropriate gateway
         let paymentVerification;
-        const xenditCurrencies = ['PHP', 'IDR', 'THB', 'VND', 'MYR', 'SGD'];
+        const xenditCurrencies = ['PHP', 'IDR', 'THB', 'MYR', 'SGD'];
 
         if (xenditCurrencies.includes(pin.paymentMethod)) {
             // SE Asia currencies use Xendit - use the stored invoice ID
