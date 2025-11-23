@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PinMyPlace - ₱100 Instant GPS Pin for Deliveries</title>
+    <title>dropLogik - Instant GPS Pin for Deliveries</title>
 
     <!-- External CSS -->
     <link
@@ -21,8 +21,11 @@
     <div class="container">
       <!-- Header -->
       <div class="header">
-        <h1>📍 PinMyPlace</h1>
-        <p>Instant GPS Pin for Easy Deliveries - Only ₱100!</p>
+        <h1>📍 dropLogik</h1>
+        <p id="headerPrice">
+          Instant GPS Pin for Anywhere, Anytime, Easy Deliveries | No Address
+          needed
+        </p>
         <p style="font-size: 14px; margin-top: 10px">
           <a
             href="#"
@@ -47,15 +50,18 @@
               <strong>Pin Your Location</strong> - Drag the marker to your exact
               address
             </li>
-            <li><strong>Pay ₱100</strong> - GCash, Maya, GrabPay, or Card</li>
             <li>
-              <strong>Get Your QR Code</strong> - Share with delivery riders
+              <strong>Pay <span class="dynamic-price">₱100</span></strong> -
+              GCash, Maya, GrabPay, or Card
+            </li>
+            <li>
+              <strong>Get Your QR Code</strong> - Share with delivery services
               instantly!
             </li>
           </ol>
           <p style="margin-top: 15px; color: #666">
-            ✅ No registration needed &nbsp; | &nbsp; ✅ Valid for 90 days
-            &nbsp; | &nbsp; ✅ Renewable anytime
+            ✅ No registration needed &nbsp; | &nbsp; ✅ Pay with wallet or card
+            &nbsp;
           </p>
         </div>
 
@@ -78,11 +84,13 @@
           <!-- Address field -->
           <div id="addressSection">
             <div class="form-group">
-              <label>Street Address/Landmarks (optional):</label>
+              <label
+                >Street Name/Landmarks/ Floor in building (optional):</label
+              >
               <input
                 type="text"
                 id="mapAddress"
-                placeholder="e.g., White gate, near Jollibee, beside sari-sari store"
+                placeholder="e.g., on the 3rd floor # 302, entrance to building facing Jollibee."
               />
               <small style="color: #666"
                 >Help delivery riders find you easier</small
@@ -119,7 +127,8 @@
                 class="register-btn"
                 style="background: #28a745 !important"
               >
-                💰 Next: Pay ₱100 & Get QR Code →
+                💰 Next: Pay <span class="dynamic-price">₱100</span> & Get QR
+                Code →
               </button>
 
               <div
@@ -315,8 +324,6 @@
             <ul style="margin: 10px 0; padding-left: 20px">
               <li>Show this QR to delivery riders when ordering</li>
               <li>They scan it to get GPS directions to your exact location</li>
-              <li>Valid for 90 days from today</li>
-              <li>Need to renew? Just pay another ₱100!</li>
             </ul>
           </div>
 
@@ -486,7 +493,7 @@
                 ₱<span id="pendingCommission">0</span>
               </div>
               <div style="font-size: 12px; opacity: 0.8">
-                Minimum payout: ₱100
+                Minimum payout: <span class="dynamic-price">₱100</span>
               </div>
             </div>
             <div>
@@ -512,7 +519,8 @@
         <div class="card">
           <h3>⚡ Quick Generate Pin for Customer</h3>
           <p style="color: #666; margin-bottom: 15px">
-            Help your customer create their pin and collect ₱100 cash
+            Help your customer create their pin and collect
+            <span class="dynamic-price">₱100</span> cash
           </p>
 
           <button
@@ -532,7 +540,9 @@
           >
             <strong>💰 You earn ₱25 per pin!</strong><br />
             <small
-              >Collect ₱100 from customer in cash. You keep ₱50 commission
+              >Collect <span class="dynamic-price">₱100</span> from customer in
+              cash. You keep
+              <span class="dynamic-commission">₱50</span> commission
               automatically.</small
             >
           </div>
@@ -557,23 +567,24 @@
         "
       >
         <p>
-          <strong>PinMyPlace</strong> - Making deliveries easier across
-          Southeast Asia 🌏
+          <strong>dropLogik</strong> - Making deliveries easier across Southeast
+          Asia and the World 🌏
         </p>
         <p style="font-size: 13px; margin-top: 10px">
-          Questions? Contact us: support@pinmyplace.com
+          Questions? Contact us: team@blocklogik.com
         </p>
       </div>
     </div>
 
     <!-- Application JavaScript -->
-    <script src="/js/utils.js"></script>
-    <script src="/js/map.js"></script>
-    <script src="/js/payment-per-pin.js"></script>
-    <script src="/js/agent.js"></script>
+    <script src="/js/utils.js?v=2"></script>
+    <script src="/js/map.js?v=2"></script>
+    <script src="/js/payment-per-pin.js?v=2"></script>
+    <script src="/js/agent.js?v=2"></script>
     <script>
-      // Auto-initialize map when page loads
-      window.addEventListener("DOMContentLoaded", function () {
+      // Auto-initialize map and detect currency when page loads
+      window.addEventListener("DOMContentLoaded", async function () {
+        await detectUserCurrency();
         initializeMap();
       });
     </script>

@@ -1,5 +1,76 @@
 // Utility Functions
 
+// Detect user's currency based on location
+async function detectUserCurrency() {
+    try {
+        // Check for currency override in URL (for testing)
+        const urlParams = new URLSearchParams(window.location.search);
+        const override = urlParams.get('currency') || urlParams.get('override');
+
+        const apiUrl = override
+            ? `/api/currency/detect?override=${override}`
+            : '/api/currency/detect';
+
+        const response = await fetch(apiUrl);
+        const result = await response.json();
+
+        if (result.success && result.currency) {
+            const currency = result.currency;
+            const formattedPrice = `${currency.symbol}${currency.price.toLocaleString()}`;
+            const commission = Math.floor(currency.price / 2);
+            const formattedCommission = `${currency.symbol}${commission.toLocaleString()}`;
+
+            // Update header price
+            const headerPrice = document.getElementById('headerPrice');
+            if (headerPrice) {
+                headerPrice.textContent = `Instant GPS Pin for Anywhere, Anytime, Easy Deliveries | No Address needed`;
+            }
+
+            // Update all dynamic price elements
+            const priceElements = document.querySelectorAll('.dynamic-price');
+            priceElements.forEach(el => {
+                el.textContent = formattedPrice;
+            });
+
+            // Update all dynamic commission elements (50% of price)
+            const commissionElements = document.querySelectorAll('.dynamic-commission');
+            commissionElements.forEach(el => {
+                el.textContent = formattedCommission;
+            });
+
+            // Update payment amount display
+            const paymentAmount = document.getElementById('paymentAmount');
+            if (paymentAmount) {
+                paymentAmount.textContent = formattedPrice;
+            }
+
+            // Update pay button text
+            const payButton = document.getElementById('payButton');
+            if (payButton) {
+                payButton.innerHTML = `💰 Pay ${formattedPrice} Now`;
+            }
+
+            // Set currency selector if exists
+            const currencySelect = document.getElementById('currencySelect');
+            if (currencySelect) {
+                currencySelect.value = currency.code;
+                // Trigger update if payment section is visible
+                if (typeof updatePaymentAmount === 'function') {
+                    updatePaymentAmount();
+                }
+            }
+
+            console.log(`✅ Currency detected: ${currency.code} (${currency.country})${override ? ' [OVERRIDE]' : ''}`);
+            return currency;
+        }
+    } catch (error) {
+        console.error('Currency detection failed:', error);
+    }
+
+    // Default to PHP if detection fails
+    return { code: 'PHP', symbol: '₱', price: 100 };
+}
+
 // Show status message
 function showStatus(message, type = "info") {
     // Try to find a status element, or create one
@@ -130,8 +201,11 @@ function copyToClipboard(text) {
 }
 
 // Initialize app on page load
-window.onload = function () {
+window.onload = async function () {
     console.log("PinMyPlace initialized - Pay Per Pin Mode");
+
+    // Detect and set user's currency
+    await detectUserCurrency();
 
     // Check which libraries loaded
     if (typeof QRCode !== "undefined") {

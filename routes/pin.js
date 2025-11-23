@@ -405,15 +405,7 @@ router.get('/:pinId', async (req, res) => {
         if (!pin) {
             return res.status(404).json({
                 success: false,
-                error: 'Pin not found or expired'
-            });
-        }
-
-        // Check if expired
-        if (pin.isExpired()) {
-            return res.status(410).json({
-                success: false,
-                error: 'This pin has expired. Please create a new one for ₱50.'
+                error: 'Pin not found'
             });
         }
 
@@ -444,7 +436,7 @@ router.get('/:pinId', async (req, res) => {
     }
 });
 
-// Renew expired pin
+// Renew endpoint (kept for backwards compatibility but pins never expire)
 router.post('/renew/:pinId', upload.single('paymentProof'), async (req, res) => {
     try {
         const pin = await Pin.findOne({ pinId: req.params.pinId });
@@ -464,8 +456,8 @@ router.post('/renew/:pinId', upload.single('paymentProof'), async (req, res) => 
             });
         }
 
-        // Extend expiration by 90 days
-        pin.expiresAt = new Date(+new Date() + 90 * 24 * 60 * 60 * 1000);
+        // Pins don't expire, but update payment info
+        pin.expiresAt = null;
         pin.isActive = true;
         pin.paymentProof = paymentProof.path;
         pin.paymentStatus = 'verified';

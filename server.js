@@ -10,6 +10,7 @@ const gpsRoutes = require('./routes/gps');
 const paymentRoutes = require('./routes/payment');
 const pinRoutes = require('./routes/pin');
 const agentRoutes = require('./routes/agent');
+const currencyRoutes = require('./routes/currency');
 
 // Initialize Express
 const app = express();
@@ -58,6 +59,7 @@ app.use('/gps', gpsRoutes);
 app.use('/payment', paymentRoutes);
 app.use('/api/pin', pinRoutes);
 app.use('/api/agent', agentRoutes);
+app.use('/api/currency', currencyRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

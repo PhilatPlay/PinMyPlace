@@ -289,21 +289,12 @@ function displayQRCode(result) {
     const qrDetails = document.getElementById("qrDetails");
     const shareLink = document.getElementById("shareLink");
 
-    // Format expiration date
-    const expiryDate = new Date(result.pin.expiresAt);
-    const formattedExpiry = expiryDate.toLocaleDateString('en-PH', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-
     // Set details
     qrDetails.innerHTML = `
     <h4>${result.pin.locationName}</h4>
     <p style="color: #666; margin: 5px 0;">${result.pin.address || 'No address specified'}</p>
     <p style="font-size: 13px; color: #999;">
       Pin ID: ${result.pin.pinId}<br>
-      Valid until: ${formattedExpiry}<br>
       <strong>📍 GPS Coordinates:</strong> ${result.pin.correctedLatitude.toFixed(6)}, ${result.pin.correctedLongitude.toFixed(6)}
     </p>
   `;

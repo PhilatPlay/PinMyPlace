@@ -80,7 +80,7 @@ const pinSchema = new mongoose.Schema({
     },
     expiresAt: {
         type: Date,
-        default: () => new Date(+new Date() + 90 * 24 * 60 * 60 * 1000) // 90 days
+        default: null // Pins never expire
     },
     isActive: {
         type: Boolean,
@@ -104,7 +104,7 @@ pinSchema.index({ expiresAt: 1 });
 
 // Method to check if pin is expired
 pinSchema.methods.isExpired = function () {
-    return new Date() > this.expiresAt;
+    return false; // Pins never expire
 };
 
 // Method to calculate correction distance

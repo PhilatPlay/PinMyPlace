@@ -1,5 +1,8 @@
 // Currency configuration for Southeast Asia
 // Prices are equivalent to ~$2 USD base price
+// Exchange rates updated as of Nov 2025
+
+const BASE_PRICE_USD = 2.00;
 
 const CURRENCIES = {
     PHP: {
@@ -8,7 +11,8 @@ const CURRENCIES = {
         name: 'Philippine Peso',
         price: 100,
         country: 'Philippines',
-        flag: '🇵🇭'
+        flag: '🇵🇭',
+        exchangeRate: 50  // 1 USD = 50 PHP
     },
     MYR: {
         code: 'MYR',
@@ -16,7 +20,8 @@ const CURRENCIES = {
         name: 'Malaysian Ringgit',
         price: 10,
         country: 'Malaysia',
-        flag: '🇲🇾'
+        flag: '🇲🇾',
+        exchangeRate: 5  // 1 USD = 5 MYR
     },
     SGD: {
         code: 'SGD',
@@ -24,7 +29,8 @@ const CURRENCIES = {
         name: 'Singapore Dollar',
         price: 3,
         country: 'Singapore',
-        flag: '🇸🇬'
+        flag: '🇸🇬',
+        exchangeRate: 1.5  // 1 USD = 1.5 SGD
     },
     THB: {
         code: 'THB',
@@ -32,7 +38,8 @@ const CURRENCIES = {
         name: 'Thai Baht',
         price: 70,
         country: 'Thailand',
-        flag: '🇹🇭'
+        flag: '🇹🇭',
+        exchangeRate: 35  // 1 USD = 35 THB
     },
     IDR: {
         code: 'IDR',
@@ -40,7 +47,8 @@ const CURRENCIES = {
         name: 'Indonesian Rupiah',
         price: 32000,
         country: 'Indonesia',
-        flag: '🇮🇩'
+        flag: '🇮🇩',
+        exchangeRate: 16000  // 1 USD = 16,000 IDR
     },
     VND: {
         code: 'VND',
@@ -48,7 +56,8 @@ const CURRENCIES = {
         name: 'Vietnamese Dong',
         price: 50000,
         country: 'Vietnam',
-        flag: '🇻🇳'
+        flag: '🇻🇳',
+        exchangeRate: 25000  // 1 USD = 25,000 VND
     },
     USD: {
         code: 'USD',
@@ -56,7 +65,17 @@ const CURRENCIES = {
         name: 'US Dollar',
         price: 2,
         country: 'International',
-        flag: '🌏'
+        flag: '🌏',
+        exchangeRate: 1  // Base currency
+    },
+    HKD: {
+        code: 'HKD',
+        symbol: 'HK$',
+        name: 'Hong Kong Dollar',
+        price: 16,
+        country: 'Hong Kong',
+        flag: '🇭🇰',
+        exchangeRate: 8  // 1 USD = 8 HKD
     }
 };
 

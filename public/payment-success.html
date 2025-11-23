@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Payment Success - PinMyPlace</title>
+    <title>Payment Success - dropLogik</title>
     <link rel="stylesheet" href="/css/styles.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -149,14 +149,6 @@
         document.getElementById("processingSection").style.display = "none";
         document.getElementById("successSection").style.display = "block";
 
-        // Format expiration date
-        const expiryDate = new Date(pin.expiresAt);
-        const formattedExpiry = expiryDate.toLocaleDateString("en-PH", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
-
         // Set details
         document.getElementById("qrDetails").innerHTML = `
                 <h4>${pin.locationName}</h4>
@@ -165,7 +157,6 @@
                 }</p>
                 <p style="font-size: 13px; color: #999;">
                     Pin ID: ${pin.pinId}<br>
-                    Valid until: ${formattedExpiry}<br>
                     <strong>📍 GPS Coordinates:</strong> ${pin.correctedLatitude.toFixed(
                       6
                     )}, ${pin.correctedLongitude.toFixed(6)}
