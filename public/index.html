@@ -194,10 +194,67 @@
             </small>
           </div>
 
+          <!-- Terms of Service Agreement -->
+          <div
+            style="
+              margin: 20px 0;
+              padding: 15px;
+              background: #f8f9fa;
+              border-radius: 8px;
+              border: 1px solid #dee2e6;
+            "
+          >
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                cursor: pointer;
+                font-size: 14px;
+                line-height: 1.6;
+              "
+            >
+              <input
+                type="checkbox"
+                id="tosCheckbox"
+                style="
+                  flex-shrink: 0;
+                  cursor: pointer;
+                  width: 18px;
+                  height: 18px;
+                "
+                onchange="updatePayButtonState()"
+              />
+              <span style="color: #333"
+                >I have read and agree to the
+                <a
+                  href="/terms-of-service.html"
+                  target="_blank"
+                  style="color: #667eea; text-decoration: underline"
+                  >Terms of Service</a
+                >,
+                <a
+                  href="/privacy-policy.html"
+                  target="_blank"
+                  style="color: #667eea; text-decoration: underline"
+                  >Privacy Policy</a
+                >, and
+                <a
+                  href="/disclaimer.html"
+                  target="_blank"
+                  style="color: #667eea; text-decoration: underline"
+                  >Liability Disclaimer</a
+                >.</span
+              >
+            </label>
+          </div>
+
           <button
             onclick="proceedToGCashPayment()"
             class="register-btn"
             id="payButton"
+            disabled
+            style="opacity: 0.5; cursor: not-allowed"
           >
             💰 Pay PHP 100 Now
           </button>
@@ -573,6 +630,28 @@
         <p style="font-size: 13px; margin-top: 10px">
           Questions? Contact us: team@blocklogik.com
         </p>
+        <p style="font-size: 12px; margin-top: 15px; opacity: 0.8">
+          <a
+            href="/privacy-policy.html"
+            style="color: white; text-decoration: underline; margin: 0 10px"
+            >Privacy Policy</a
+          >
+          |
+          <a
+            href="/terms-of-service.html"
+            style="color: white; text-decoration: underline; margin: 0 10px"
+            >Terms of Service</a
+          >
+          |
+          <a
+            href="/disclaimer.html"
+            style="color: white; text-decoration: underline; margin: 0 10px"
+            >Disclaimer</a
+          >
+        </p>
+        <p style="font-size: 11px; margin-top: 10px; opacity: 0.7">
+          © 2025 dropLogik LLC. All rights reserved.
+        </p>
       </div>
     </div>
 
@@ -587,6 +666,24 @@
         await detectUserCurrency();
         initializeMap();
       });
+
+      // Enable/disable pay button based on TOS checkbox
+      function updatePayButtonState() {
+        const checkbox = document.getElementById("tosCheckbox");
+        const payButton = document.getElementById("payButton");
+
+        if (checkbox && payButton) {
+          if (checkbox.checked) {
+            payButton.disabled = false;
+            payButton.style.opacity = "1";
+            payButton.style.cursor = "pointer";
+          } else {
+            payButton.disabled = true;
+            payButton.style.opacity = "0.5";
+            payButton.style.cursor = "not-allowed";
+          }
+        }
+      }
     </script>
   </body>
 </html>
