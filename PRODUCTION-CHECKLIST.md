@@ -68,7 +68,7 @@ PORT=3000
    - Copy webhook secret to `.env` as `PAYMONGO_WEBHOOK_SECRET`
 
 3. **Test Payment Flow**
-   - Make a real ₱100 payment
+   - Make a real ₱100 payment (current price per pin)
    - Verify QR code generation
    - Check database for verified pin
    - Confirm webhook receipt in logs

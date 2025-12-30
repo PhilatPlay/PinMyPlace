@@ -134,4 +134,4 @@ PORT=3001
 - [ ] Browser console shows "PinMyPlace initialized"
 - [ ] No errors about missing libraries
 - [ ] Can drop a pin on the map
-- [ ] Payment button shows "Pay ₱50 via GCash Now"
+- [ ] Payment button shows "Pay ₱100 via GCash Now"

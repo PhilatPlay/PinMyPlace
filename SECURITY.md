@@ -83,7 +83,7 @@ Users could potentially screenshot GPS coordinates or QR codes before paying, al
    └─> Map updates position ✅
        └─> Still NO coordinates visible ⚠️
 
-3. User clicks "Pay ₱50 & Get QR Code" ✅
+3. User clicks "Pay ₱100 & Get QR Code" ✅
    └─> Payment section appears ✅
        └─> Still NO QR code or coordinates ⚠️
 

@@ -1,64 +1,78 @@
-# PinMyPlace - Pay-Per-Pin Business Model Guide
+# PinMyPlace - Pay-Per-Pin + Bulk Purchase Model
 
 ## 🎯 Business Model Overview
 
-PinMyPlace has pivoted from a subscription-based model to a **pay-per-pin** model with a **street-level agent distribution network**.
+PinMyPlace operates on a dual-revenue model:
+1. **Direct Sales** - Individual users pay ₱100 per pin
+2. **Bulk Sales** - Resellers buy codes in bulk at wholesale prices and resell for profit
 
-### Key Changes:
+### Key Features:
 
-- ❌ **OLD**: ₱29/month subscription (vulnerable to reselling)
-- ✅ **NEW**: ₱50 per pin (one-time payment)
-- ✅ **Agent Network**: Agents pay ₱300/month to sell unlimited pins
-- ✅ **No Login Required**: Customers get instant QR code without creating account
+- ✅ **Pay-per-pin**: ₱100 per pin for direct customers
+- ✅ **Bulk Purchase**: Buy 10+ codes at ₱50-75 each (wholesale)
+- ✅ **Reseller Model**: Similar to prepaid load distribution
+- ✅ **No Login Required**: Customers get instant QR code
+- ✅ **No Commission Hassles**: Resellers keep 100% of their markup
 
 ---
 
 ## 💰 Pricing Structure
 
-### For Customers:
+### For Individual Customers:
 
-- **₱50 per pin** - One-time payment via GCash
+- **₱100 per pin** - One-time payment via GCash/Maya/GrabPay/Card
 - **90-day validity** - Pin expires after 3 months
-- **Renewal**: ₱50 to extend for another 90 days
-- **No account needed** - Just upload payment proof and get QR code
+- **Renewal**: ₱100 to extend for another 90 days
+- **No account needed** - Just pay and get QR code
 
-### For Agents/Resellers:
+### For Bulk Buyers (Resellers):
 
-- **₱300/month subscription** to become an agent
-- **₱25 commission per pin** sold (50% split)
-- **Unlimited pins** - Sell as many as you can
-- **Minimum payout**: ₱100 (accumulated commissions)
-- **Payout time**: 1-2 business days via GCash or bank
+- **Tier 1 (10-49 codes):** ₱75 per code (25% discount)
+- **Tier 2 (50+ codes):** ₱50 per code (50% discount)
+- **Code validity:** 180 days from purchase
+- **Minimum purchase:** 10 codes
+- **One-time use:** Each code creates one pin only
 
 ---
 
-## 🏪 Agent Distribution Model
+## 🏪 Bulk Reseller Model
 
-Inspired by how prepaid load is sold in the Philippines - agents operate like sari-sari stores or street vendors.
+Inspired by how prepaid load is sold in the Philippines - resellers operate like sari-sari stores or street vendors.
 
 ### How It Works:
 
-1. **Agent pays ₱300/month** subscription fee
-2. **Customer comes to agent** asking for a pin
-3. **Agent collects ₱50 cash** from customer
-4. **Agent creates pin** using customer's phone/location
-5. **Customer gets QR code** instantly
-6. **Agent keeps ₱25** commission automatically
-7. **Platform gets ₱25** per pin
+1. **Reseller buys bulk codes** (e.g., 50 codes at ₱50 each = ₱2,500)
+2. **Receives access codes** instantly (downloadable text file)
+3. **Customer asks for a pin** 
+4. **Reseller sells code** for ₱80-100 (their choice)
+5. **Customer redeems code** on website to create pin
+6. **Reseller keeps the profit** (₱30-50 per code)
 
-### Agent Benefits:
+### Reseller Benefits:
 
-- Work from anywhere (street corner, sari-sari store, home)
-- No inventory to manage
-- Instant commission tracking in dashboard
-- Weekly or monthly payouts
-- Low overhead - just need internet connection
+- **Work from anywhere** (street corner, sari-sari store, home, online)
+- **No inventory management** - just digital codes
+- **No commission tracking** - keep all your markup
+- **No subscription fees** - just buy codes when needed
+- **Low overhead** - customers can redeem codes themselves
+- **Scalable** - buy more when you sell out
 
 ### Example Earnings:
 
-- **5 pins/day** = ₱125/day = ₱3,750/month (minus ₱300 subscription = **₱3,450 profit**)
-- **10 pins/day** = ₱250/day = ₱7,500/month (minus ₱300 subscription = **₱7,200 profit**)
-- **20 pins/day** = ₱500/day = ₱15,000/month (minus ₱300 subscription = **₱14,700 profit**)
+**Scenario 1: Buy 10 codes at ₱75 each**
+- Cost: ₱750
+- Sell at ₱95 each: ₱950
+- **Profit: ₱200** (27% margin)
+
+**Scenario 2: Buy 50 codes at ₱50 each**
+- Cost: ₱2,500
+- Sell at ₱90 each: ₱4,500
+- **Profit: ₱2,000** (80% margin)
+
+**Scenario 3: Buy 100 codes at ₱50 each**
+- Cost: ₱5,000
+- Sell at ₱85 each: ₱8,500
+- **Profit: ₱3,500** (70% margin)
 
 ---
 
@@ -68,16 +82,17 @@ Inspired by how prepaid load is sold in the Philippines - agents operate like sa
 
 #### Pin Routes (`/api/pin`)
 
-- `POST /create-with-payment` - Create pin with GCash proof upload
+- `POST /initiate-payment` - Create PayMongo payment link for ₱100
+- `POST /create-with-payment` - Verify payment and create pin
+- `POST /create-with-code` - Redeem bulk access code and create pin
 - `GET /:pinId` - Public lookup of pin details
-- `POST /renew/:pinId` - Renew expired pin for ₱50
+- `POST /renew/:pinId` - Renew expired pin for ₱100
 
-#### Agent Routes (`/api/agent`)
+#### Bulk Routes (`/api/bulk`)
 
-- `POST /register` - Agent registration
-- `POST /login` - Agent authentication
-- `GET /stats` - Dashboard stats (today, month, total)
-- `POST /request-payout` - Request commission payout
+- `POST /purchase` - Initiate bulk code purchase (10+ codes)
+- `POST /verify-and-generate` - Verify payment and generate access codes
+- `POST /validate-code` - Check if code is valid before redemption
 
 ### Database Models
 
@@ -85,25 +100,36 @@ Inspired by how prepaid load is sold in the Philippines - agents operate like sa
 
 ```javascript
 {
-  pinId: String,           // Unique: PIN-XXXXXXXX
-  locationName: String,    // Customer's location name
-  customerPhone: String,   // No account needed
+  pinId: String,             // Unique: PIN-XXXXXXXX
+  locationName: String,
+  customerPhone: String,
   correctedLatitude: Number,
   correctedLongitude: Number,
-  paymentProof: String,    // GCash screenshot path
-  soldByAgent: ObjectId,   // Reference to Agent
-  agentCommission: Number, // ₱25
-  expiresAt: Date,         // 90 days from creation
-  isExpired: Boolean
+  paymentMethod: String,     // 'gcash', 'paymaya', 'bulk_code'
+  redemptionMethod: String,  // 'payment' or 'bulk_code'
+  redeemedCode: String,      // Code used (if bulk purchase)
+  paymentStatus: String,     // 'verified' or 'code_redeemed'
+  expiresAt: Date,          // 90 days from creation
 }
 ```
 
-#### Agent Model
+#### BulkCode Model (NEW)
 
 ```javascript
 {
-  agentId: String,              // AGT-XXXXXX
-  email: String,
+  code: String,              // DL-XXXXXXXX (unique)
+  purchaseEmail: String,
+  purchasePhone: String,
+  unitPrice: Number,         // ₱50 or ₱75 depending on quantity
+  totalPaid: Number,
+  paymentReferenceId: String,
+  isUsed: Boolean,           // false until redeemed
+  usedAt: Date,
+  usedByPhone: String,
+  redeemedPinId: String,     // Links to created pin
+  purchasedAt: Date,
+  expiresAt: Date            // 180 days from purchase
+}
   password: String,             // Hashed
   name: String,
   phone: String,
@@ -137,7 +163,7 @@ Inspired by how prepaid load is sold in the Philippines - agents operate like sa
 3. Enable GPS location
 4. Adjust pin on map to exact delivery spot
 5. Enter location name
-6. Click "Pay ₱50 & Get QR Code"
+6. Click "Pay ₱100 & Get QR Code"
 7. Upload GCash payment screenshot
 8. Enter phone number
 9. Get QR code instantly
@@ -149,10 +175,10 @@ Inspired by how prepaid load is sold in the Philippines - agents operate like sa
 2. View dashboard (today's sales, month stats, commission balance)
 3. Click "Create Pin for Customer"
 4. Help customer set location on map
-5. Collect ₱50 cash from customer
+5. Collect ₱100 cash from customer
 6. Upload payment proof (can use agent's GCash)
 7. Customer gets QR code
-8. Agent earns ₱25 commission automatically
+8. Agent earns ₱50 commission automatically
 9. Return to dashboard
 10. Request payout when commission reaches ₱100
 
@@ -269,13 +295,13 @@ Requirements:
 
 ### For Customers:
 
-- "₱50 solves your delivery address problem forever!"
+- "₱100 solves your delivery address problem forever!"
 - "No more wrong deliveries - pin your exact location"
 - "Delivery riders find you in 1 click"
 
 ### For Agents:
 
-- "Earn ₱25 per customer - no inventory needed!"
+- "Earn ₱50 per customer - no inventory needed!"
 - "Like selling load, but for addresses"
 - "Turn your store into a pin creation hub"
 - "₱300/month = unlimited earning potential"
@@ -316,13 +342,13 @@ Requirements:
 
 - 50 active agents
 - 1,000 pins created
-- ₱50,000 revenue (₱25,000 to platform, ₱25,000 to agents)
+- ₱100,000 revenue (₱50,000 to platform, ₱50,000 to agents)
 
 ### Month 3 Goal:
 
 - 200 active agents
 - 10,000 pins created
-- ₱500,000 revenue
+- ₱1,000,000 revenue
 
 ### Month 6 Goal:
 

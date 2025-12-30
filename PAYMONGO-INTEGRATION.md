@@ -122,7 +122,7 @@ POST / api / pin / webhook;
 
 - No screenshot uploads
 - No manual reference entry
-- Just click "Pay ₱50" → GCash → Done
+- Just click "Pay ₱100" → GCash → Done
 
 📱 **Automatic Redirect**
 
@@ -142,7 +142,7 @@ POST / api / pin / webhook;
 
 - Automatically detects logged-in agent
 - Adds agent ID to pin record
-- Credits ₱25 commission
+- Credits ₱50 commission
 - Updates agent stats
 
 👥 **Agent Dashboard**
@@ -189,7 +189,7 @@ npm start
 3. **Make Payment**
 
 - Enter mobile number
-- Click "Pay ₱50 via GCash Now"
+- Click "Pay ₱100 via GCash Now"
 - Use PayMongo test credentials
 - Complete test payment
 
@@ -208,7 +208,7 @@ See [TESTING.md](./TESTING.md) for detailed instructions.
 │   User UI   │
 │  (Browser)  │
 └──────┬──────┘
-       │ 1. Click "Pay ₱50"
+       │ 1. Click "Pay ₱100"
        ▼
 ┌─────────────────────────────────────┐
 │   POST /api/pin/initiate-payment    │
@@ -268,7 +268,7 @@ PayMongo → POST /api/pin/webhook → Log payment event
 2. Set up production MongoDB
 3. Configure PayMongo webhooks with domain
 4. Enable HTTPS/SSL
-5. Test with real ₱50 GCash payment
+5. Test with real ₱100 GCash payment
 
 ### Optional Enhancements
 

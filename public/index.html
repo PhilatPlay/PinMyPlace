@@ -26,13 +26,14 @@
           Instant GPS Pin for Anywhere, Anytime, Easy Deliveries | No Address
           needed
         </p>
-        <p style="font-size: 14px; margin-top: 10px">
+        <p id="authLinkContainer" style="font-size: 14px; margin-top: 10px">
           <a
+            id="authLink"
             href="#"
-            onclick="showAgentLogin(); return false;"
+            onclick="toggleAuth(); return false;"
             style="color: white; text-decoration: underline"
           >
-            Agent/Reseller Login
+            Login / Sign Up
           </a>
         </p>
       </div>
@@ -149,11 +150,32 @@
 
         <!-- Payment Section (appears after pin is set) -->
         <div class="card" id="paymentSection" style="display: none">
-          <h3>💳 Step 2: Pay <span id="paymentAmount">₱100</span></h3>
-          <p style="color: #666; margin-bottom: 20px">
-            Choose your payment method: GCash, Maya (PayMaya), GrabPay, or
-            Credit/Debit Card
-          </p>
+          <h3>💳 Step 2: Complete Your Pin</h3>
+          
+          <!-- Payment Method Selection -->
+          <div style="margin-bottom: 20px; text-align: center;">
+            <button 
+              id="paymentModeBtn" 
+              onclick="showPaymentMode()"
+              style="padding: 10px 20px; margin: 5px; border: 2px solid #007bff; background: #007bff; color: white; border-radius: 8px; cursor: pointer; font-size: 16px;"
+            >
+              💳 Pay Now (₱100)
+            </button>
+            <button 
+              id="codeModeBtn" 
+              onclick="showCodeMode()"
+              style="padding: 10px 20px; margin: 5px; border: 2px solid #28a745; background: white; color: #28a745; border-radius: 8px; cursor: pointer; font-size: 16px;"
+            >
+              🎫 I Have an Access Code
+            </button>
+          </div>
+
+          <!-- Payment Mode -->
+          <div id="paymentMode">
+            <p style="color: #666; margin-bottom: 20px">
+              Choose your payment method: GCash, Maya (PayMaya), GrabPay, or
+              Credit/Debit Card
+            </p>
 
           <div class="form-group">
             <label>Select Currency:</label>
@@ -292,6 +314,56 @@
 
           <div id="paymentResult"></div>
         </div>
+        
+        <!-- Access Code Mode -->
+        <div class="card" id="codeModeCard" style="display: none;">
+          <h3>🎫 Use Access Code</h3>
+          <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #007bff;">
+            <strong>Redeem Your Access Code</strong>
+            <p style="margin: 5px 0; font-size: 14px; color: #084298;">
+              Enter your bulk purchase access code to create your pin instantly - no payment needed!
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label>Access Code:</label>
+            <input
+              type="text"
+              id="accessCode"
+              placeholder="DL-XXXXXXXX"
+              style="text-transform: uppercase; font-family: 'Courier New', monospace; font-size: 18px;"
+            />
+            <small style="color: #666">
+              Enter the code you received from your bulk purchase
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Your Mobile Number:</label>
+            <input
+              type="tel"
+              id="codeCustomerPhone"
+              placeholder="+60123456789 or 09171234567"
+            />
+            <small style="color: #666">
+              For verification and to link this pin to you
+            </small>
+          </div>
+
+          <button
+            onclick="createPinWithCode()"
+            class="register-btn"
+            style="background: #28a745 !important"
+          >
+            ✅ Create Pin with Code
+          </button>
+
+          <div style="text-align: center; margin-top: 15px;">
+            <a href="/bulk-purchase.html" style="color: #007bff; text-decoration: underline; font-size: 14px;">
+              Don't have a code? Buy in bulk (10+ codes at ₱50-75 each)
+            </a>
+          </div>
+        </div>
 
         <!-- QR Code Result (appears after payment verified) -->
         <div class="card" id="qrSection" style="display: none">
@@ -389,71 +461,11 @@
           </button>
         </div>
       </div>
-
-      <!-- Agent/Reseller Login Modal (Hidden by default) -->
-      <div class="modal" id="agentLoginModal" style="display: none">
-        <div
-          class="modal-content card"
-          style="max-width: 500px; margin: 50px auto"
-        >
-          <button
-            onclick="closeAgentLogin()"
-            style="
-              position: absolute;
-              top: 10px;
-              right: 10px;
-              width: auto;
-              padding: 5px 15px;
-            "
-          >
-            ✕
-          </button>
-
-          <h3>🏪 Agent/Reseller Login</h3>
-          <p>Login to access your agent dashboard and start selling pins!</p>
-
-          <div class="form-group">
-            <label>Email/Agent ID:</label>
-            <input type="text" id="agentEmail" placeholder="your@email.com" />
-          </div>
-
-          <div class="form-group">
-            <label>Password:</label>
-            <input
-              type="password"
-              id="agentPassword"
-              placeholder="Enter password"
-            />
-          </div>
-
-          <button onclick="agentLogin()">Login to Dashboard</button>
-          <div id="agentAuthStatus"></div>
-
-          <div
-            style="
-              margin-top: 20px;
-              padding: 15px;
-              background: #e8f4fd;
-              border-radius: 8px;
-            "
-          >
-            <strong>Want to become an agent?</strong><br />
-            <p style="margin: 10px 0">
-              Earn ₱25 for every pin you sell! Only ₱300/month to join.
-            </p>
-            <a
-              href="#"
-              onclick="showAgentSignup(); return false;"
-              style="color: #007bff"
-            >
-              Sign Up as Agent →
-            </a>
-          </div>
-        </div>
       </div>
+      <!-- End Main Pin Section -->
 
-      <!-- Agent Dashboard (Hidden, shows after login) -->
-      <div id="agentDashboard" style="display: none">
+      <!-- User Dashboard (Hidden, shows after login) -->
+      <div id="userDashboard" style="display: none; min-height: 100px; width: 100%;">
         <div
           class="card"
           style="
@@ -465,151 +477,173 @@
           "
         >
           <div>
-            <strong id="agentName">Agent</strong>
+            <strong id="userName">User</strong>
             <span
               style="
                 margin-left: 10px;
-                background: #ff6b00;
+                background: #007bff;
                 color: white;
                 padding: 3px 10px;
                 border-radius: 3px;
                 font-size: 12px;
               "
-              >🏪 AGENT</span
+              >👤 USER</span
             >
           </div>
           <button
-            onclick="agentLogout()"
+            onclick="userLogout()"
             style="width: auto; padding: 5px 15px; margin: 0; font-size: 13px"
           >
             Logout
           </button>
         </div>
 
-        <!-- Agent Stats -->
-        <div class="grid">
-          <div
-            class="card"
-            style="
-              text-align: center;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: white;
-            "
-          >
-            <h4>Pins Sold Today</h4>
-            <div
-              style="font-size: 48px; font-weight: bold; margin: 10px 0"
-              id="todaySales"
-            >
-              0
-            </div>
-            <p>Earnings: ₱<span id="todayEarnings">0</span></p>
-          </div>
-
-          <div
-            class="card"
-            style="
-              text-align: center;
-              background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-              color: white;
-            "
-          >
-            <h4>Total This Month</h4>
-            <div
-              style="font-size: 48px; font-weight: bold; margin: 10px 0"
-              id="monthSales"
-            >
-              0
-            </div>
-            <p>Earnings: ₱<span id="monthEarnings">0</span></p>
-          </div>
+        <!-- Welcome Message -->
+        <div class="card" style="text-align: center; padding: 40px 20px;">
+          <h2>Welcome back, <span id="userNameDisplay">User</span>! 👋</h2>
+          <p style="font-size: 18px; color: #666; margin: 20px 0;">
+            You're logged in and ready to go!
+          </p>
         </div>
 
-        <!-- Commission Balance -->
-        <div
-          class="card"
-          style="
-            background: linear-gradient(135deg, #ff6b00 0%, #ff8c42 100%);
-            color: white;
-          "
-        >
-          <h3 style="color: white">💰 Commission Balance</h3>
-          <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-top: 15px;
-            "
-          >
-            <div>
-              <div style="font-size: 14px; opacity: 0.9">
-                Pending Commission
-              </div>
-              <div style="font-size: 32px; font-weight: bold; margin: 5px 0">
-                ₱<span id="pendingCommission">0</span>
-              </div>
-              <div style="font-size: 12px; opacity: 0.8">
-                Minimum payout: <span class="dynamic-price">₱100</span>
-              </div>
-            </div>
-            <div>
-              <button
-                onclick="requestPayout()"
-                style="
-                  background: white;
-                  color: #ff6b00;
-                  padding: 12px 24px;
-                  border: none;
-                  border-radius: 5px;
-                  cursor: pointer;
-                  font-weight: bold;
-                "
-              >
-                Request Payout
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Generate Pin -->
+        <!-- Bulk Purchase Option -->
         <div class="card">
-          <h3>⚡ Quick Generate Pin for Customer</h3>
+          <h3>🎫 Buy Bulk Access Codes</h3>
           <p style="color: #666; margin-bottom: 15px">
-            Help your customer create their pin and collect
-            <span class="dynamic-price">₱100</span> cash
+            Purchase access codes in bulk at wholesale prices and resell them for profit!
+          </p>
+          
+          <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin: 15px 0;">
+            <strong>💰 Wholesale Pricing:</strong><br>
+            <p style="margin: 10px 0;">
+              • 10-49 codes: ₱75 each (25% off)<br>
+              • 50+ codes: ₱50 each (50% off)
+            </p>
+          </div>
+
+          <a href="/bulk-purchase.html" style="text-decoration: none;">
+            <button style="background: #28a745 !important; font-size: 16px; width: 100%;">
+              🛒 Purchase Bulk Codes
+            </button>
+          </a>
+        </div>
+
+        <!-- Or Create Single Pin -->
+        <div class="card">
+          <h3>📍 Create a Single Pin</h3>
+          <p style="color: #666; margin-bottom: 15px">
+            Need just one pin? Create it now for ₱100.
           </p>
 
           <button
-            onclick="startAgentPinCreation()"
-            style="background: #28a745 !important; font-size: 16px"
+            onclick="startPinCreation()"
+            style="background: #007bff !important; font-size: 16px; width: 100%;"
           >
-            📍 Start Creating Pin for Customer
+            Create Single Pin (₱100)
           </button>
+        </div>
+      </div>
+
+      <!-- User Login Modal (Hidden by default) -->
+      <div class="modal" id="loginModal" style="display: none">
+        <div
+          class="modal-content card"
+          style="max-width: 500px; margin: 50px auto"
+        >
+          <button
+            onclick="closeLogin()"
+            style="
+              position: absolute;
+              top: 10px;
+              right: 10px;
+              width: auto;
+              padding: 5px 15px;
+            "
+          >
+            ✕
+          </button>
+
+          <h3>🔐 User Login</h3>
+          <p style="margin-bottom: 20px;">Login or create an account to access bulk purchasing and more!</p>
+
+          <!-- Tab buttons -->
+          <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee;">
+            <button 
+              id="loginTab" 
+              onclick="showLoginForm()" 
+              style="flex: 1; background: #007bff; border-bottom: 3px solid #007bff; margin-top: 0;"
+            >
+              Login
+            </button>
+            <button 
+              id="signupTab" 
+              onclick="showSignupForm()" 
+              style="flex: 1; background: white; color: #333; border: none; border-bottom: 3px solid transparent; margin-top: 0;"
+            >
+              Sign Up
+            </button>
+          </div>
+
+          <!-- Login Form -->
+          <div id="loginForm">
+          <div class="form-group">
+            <label>Email:</label>
+            <input type="text" id="loginEmail" placeholder="your@email.com" />
+          </div>
+
+          <div class="form-group">
+            <label>Password:</label>
+            <input
+              type="password"
+              id="loginPassword"
+              placeholder="Enter password"
+            />
+          </div>
+
+          <button onclick="userLogin()">Login</button>
+          <div id="loginAuthStatus"></div>
+          </div>
+
+          <!-- Signup Form -->
+          <div id="signupForm" style="display: none;">
+          <div class="form-group">
+            <label>Name:</label>
+            <input type="text" id="signupName" placeholder="Your full name" />
+          </div>
+
+          <div class="form-group">
+            <label>Email:</label>
+            <input type="email" id="signupEmail" placeholder="your@email.com" />
+          </div>
+
+          <div class="form-group">
+            <label>Phone:</label>
+            <input type="tel" id="signupPhone" placeholder="+60123456789 or 09171234567" />
+          </div>
+
+          <div class="form-group">
+            <label>Password:</label>
+            <input type="password" id="signupPassword" placeholder="Minimum 6 characters" />
+          </div>
+
+          <button onclick="userSignup()">Create Account</button>
+          <div id="signupAuthStatus"></div>
+          </div>
 
           <div
             style="
-              margin-top: 15px;
+              margin-top: 20px;
               padding: 15px;
-              background: #fff3cd;
+              background: #e8f4fd;
               border-radius: 8px;
             "
           >
-            <strong>💰 You earn ₱25 per pin!</strong><br />
-            <small
-              >Collect <span class="dynamic-price">₱100</span> from customer in
-              cash. You keep
-              <span class="dynamic-commission">₱50</span> commission
-              automatically.</small
-            >
-          </div>
-        </div>
-
-        <!-- Agent Sales History -->
-        <div class="card">
-          <h3>📊 Your Sales History</h3>
-          <div id="agentSalesHistory">
-            <p style="color: #666">Loading sales history...</p>
+            <strong>💡 Why create an account?</strong><br />
+            <p style="margin: 10px 0">
+              • Buy codes in bulk at ₱50-75 each<br>
+              • Track your purchases and usage<br>
+              • Resell codes for ₱80-100 profit per code
+            </p>
           </div>
         </div>
       </div>
@@ -659,13 +693,52 @@
     <script src="/js/utils.js?v=2"></script>
     <script src="/js/map.js?v=2"></script>
     <script src="/js/payment-per-pin.js?v=2"></script>
-    <script src="/js/agent.js?v=2"></script>
+    <script src="/js/user.js?v=2"></script>
     <script>
       // Auto-initialize map and detect currency when page loads
       window.addEventListener("DOMContentLoaded", async function () {
         await detectUserCurrency();
-        initializeMap();
+        
+        // Check if user is logged in first
+        const savedToken = localStorage.getItem('userToken');
+        
+        if (savedToken) {
+          // User is logged in - checkUserSession will handle dashboard display
+          console.log('User logged in, waiting for checkUserSession');
+          updateAuthLink(true);
+        } else {
+          // Not logged in - show map
+          initializeMap();
+          updateAuthLink(false);
+        }
       });
+
+      // Toggle auth - show login modal or logout
+      function toggleAuth() {
+        const savedToken = localStorage.getItem('userToken');
+        if (savedToken) {
+          // User is logged in, so logout
+          if (confirm('Are you sure you want to logout?')) {
+            userLogout();
+            updateAuthLink(false);
+          }
+        } else {
+          // User not logged in, show login modal
+          showLogin();
+        }
+      }
+
+      // Update the auth link text based on login status
+      function updateAuthLink(isLoggedIn) {
+        const authLink = document.getElementById('authLink');
+        if (authLink) {
+          if (isLoggedIn) {
+            authLink.textContent = 'Logout';
+          } else {
+            authLink.textContent = 'Login / Sign Up';
+          }
+        }
+      }
 
       // Enable/disable pay button based on TOS checkbox
       function updatePayButtonState() {
@@ -683,6 +756,118 @@
             payButton.style.cursor = "not-allowed";
           }
         }
+      }
+
+      // Show payment mode
+      function showPaymentMode() {
+        document.getElementById('paymentMode').style.display = 'block';
+        document.getElementById('codeModeCard').style.display = 'none';
+        document.getElementById('paymentModeBtn').style.background = '#007bff';
+        document.getElementById('paymentModeBtn').style.color = 'white';
+        document.getElementById('codeModeBtn').style.background = 'white';
+        document.getElementById('codeModeBtn').style.color = '#28a745';
+      }
+
+      // Show code mode
+      function showCodeMode() {
+        document.getElementById('paymentMode').style.display = 'none';
+        document.getElementById('codeModeCard').style.display = 'block';
+        document.getElementById('codeModeBtn').style.background = '#28a745';
+        document.getElementById('codeModeBtn').style.color = 'white';
+        document.getElementById('paymentModeBtn').style.background = 'white';
+        document.getElementById('paymentModeBtn').style.color = '#007bff';
+      }
+
+      // Create pin with access code
+      async function createPinWithCode() {
+        const accessCode = document.getElementById('accessCode').value.trim();
+        const customerPhone = document.getElementById('codeCustomerPhone').value.trim();
+
+        if (!accessCode) {
+          alert('Please enter your access code');
+          return;
+        }
+
+        if (!customerPhone) {
+          alert('Please enter your mobile number');
+          return;
+        }
+
+        if (!correctedPosition) {
+          alert('Please set your location on the map first');
+          return;
+        }
+
+        const locationName = document.getElementById('locationName').value.trim();
+        const address = document.getElementById('mapAddress').value.trim();
+
+        if (!locationName) {
+          alert('Please enter a location name');
+          return;
+        }
+
+        try {
+          showStatus('Validating access code...', 'info');
+
+          const response = await fetch('/api/pin/create-with-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              accessCode: accessCode,
+              locationName: locationName,
+              customerPhone: customerPhone,
+              address: address,
+              latitude: originalPosition.lat,
+              longitude: originalPosition.lng,
+              correctedLatitude: correctedPosition.lat,
+              correctedLongitude: correctedPosition.lng
+            })
+          });
+
+          const data = await response.json();
+
+          if (!data.success) {
+            showStatus(data.error || 'Failed to create pin with code', 'error');
+            return;
+          }
+
+          // Show success and QR code
+          showStatus('✅ Pin created successfully!', 'success');
+          displayQRCode(data.pin);
+
+        } catch (error) {
+          console.error('Code redemption error:', error);
+          showStatus('Error creating pin. Please try again.', 'error');
+        }
+      }
+
+      // Display QR code (reuse existing function or create if not exists)
+      function displayQRCode(pin) {
+        document.getElementById('codeModeCard').style.display = 'none';
+        document.getElementById('paymentSection').style.display = 'none';
+        
+        const qrSection = document.getElementById('qrSection');
+        qrSection.style.display = 'block';
+        
+        // Populate QR code data
+        document.getElementById('displayLocationName').textContent = pin.locationName;
+        if (pin.address) {
+          document.getElementById('displayAddress').textContent = pin.address;
+        }
+        document.getElementById('displayCoordinates').textContent = 
+          `${pin.correctedLatitude.toFixed(6)}, ${pin.correctedLongitude.toFixed(6)}`;
+        
+        // Generate QR code
+        const qrContainer = document.getElementById('qrCodeContainer');
+        qrContainer.innerHTML = '';
+        new QRCode(qrContainer, {
+          text: pin.qrCode,
+          width: 256,
+          height: 256
+        });
+
+        // Scroll to QR section
+        qrSection.scrollIntoView({ behavior: 'smooth' });
       }
     </script>
   </body>

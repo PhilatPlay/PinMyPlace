@@ -68,7 +68,14 @@ function proceedToPayment() {
         referenceNumber: paymentReferenceNumber
     };
 
-    // Show payment section
+    // Hide Step 1 map section and show payment section
+    const mainCards = document.querySelectorAll('#mainPinSection > .card');
+    mainCards.forEach(card => {
+        if (!card.id || card.id !== 'paymentSection') {
+            card.style.display = 'none';
+        }
+    });
+    
     document.getElementById("paymentSection").style.display = "block";
     document.getElementById("paymentRefNumber").textContent = paymentReferenceNumber;
 

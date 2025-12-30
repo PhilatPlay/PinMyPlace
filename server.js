@@ -9,8 +9,8 @@ const authRoutes = require('./routes/auth');
 const gpsRoutes = require('./routes/gps');
 const paymentRoutes = require('./routes/payment');
 const pinRoutes = require('./routes/pin');
-const agentRoutes = require('./routes/agent');
 const currencyRoutes = require('./routes/currency');
+const bulkRoutes = require('./routes/bulk');
 
 // Initialize Express
 const app = express();
@@ -54,12 +54,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API Routes
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/gps', gpsRoutes);
 app.use('/payment', paymentRoutes);
 app.use('/api/pin', pinRoutes);
-app.use('/api/agent', agentRoutes);
 app.use('/api/currency', currencyRoutes);
+app.use('/api/bulk', bulkRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -88,7 +88,7 @@ npm start
 3. Allow GPS location
 4. Set pin on map
 5. Enter location name
-6. Click "Pay ₱50 & Get QR Code"
+6. Click "Pay ₱100 & Get QR Code"
 7. Upload test image as payment proof
 8. Enter phone number: 09171234567
 9. Verify QR code displays

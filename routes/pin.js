@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const validator = require('validator');
 const rateLimit = require('express-rate-limit');
 const Pin = require('../models/Pin');
+const BulkCode = require('../models/BulkCode');
 const { createGCashPayment, verifyPayment, handleWebhook } = require('../services/paymentService');
 const { createStripePayment, verifyStripePayment, handleStripeWebhook } = require('../services/stripeService');
 const { createXenditPayment, verifyXenditPayment, handleXenditWebhook } = require('../services/xenditService');
@@ -477,6 +478,140 @@ router.post('/renew/:pinId', upload.single('paymentProof'), async (req, res) => 
         res.status(500).json({
             success: false,
             error: 'Failed to renew pin'
+        });
+    }
+});
+
+// Create pin with access code (bulk purchase redemption)
+router.post('/create-with-code', verificationLimiter, async (req, res) => {
+    try {
+        const {
+            accessCode,
+            locationName,
+            customerPhone,
+            address,
+            latitude,
+            longitude,
+            correctedLatitude,
+            correctedLongitude
+        } = req.body;
+
+        // Validate access code
+        if (!accessCode) {
+            return res.status(400).json({
+                success: false,
+                error: 'Access code is required'
+            });
+        }
+
+        // Find and validate the code
+        const bulkCode = await BulkCode.findOne({ code: accessCode.toUpperCase() });
+
+        if (!bulkCode) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid access code'
+            });
+        }
+
+        if (bulkCode.isUsed) {
+            return res.status(400).json({
+                success: false,
+                error: 'This code has already been used',
+                usedAt: bulkCode.usedAt
+            });
+        }
+
+        if (new Date() > bulkCode.expiresAt) {
+            return res.status(400).json({
+                success: false,
+                error: 'This code has expired',
+                expiredAt: bulkCode.expiresAt
+            });
+        }
+
+        // Validate phone number
+        if (!isValidPhone(customerPhone)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Valid phone number is required'
+            });
+        }
+
+        // Validate coordinates
+        if (!isValidCoordinates(latitude, longitude) ||
+            !isValidCoordinates(correctedLatitude, correctedLongitude)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid GPS coordinates'
+            });
+        }
+
+        // Sanitize inputs
+        const sanitizedLocationName = sanitizeInput(locationName);
+        const sanitizedAddress = sanitizeInput(address || '');
+
+        if (sanitizedLocationName.length < 3 || sanitizedLocationName.length > 100) {
+            return res.status(400).json({
+                success: false,
+                error: 'Location name must be between 3 and 100 characters'
+            });
+        }
+
+        // Generate QR code URL
+        const qrUrl = `https://www.google.com/maps?q=${correctedLatitude},${correctedLongitude}`;
+
+        // Create the pin
+        const newPin = new Pin({
+            pinId: generatePinId(),
+            locationName: sanitizedLocationName,
+            customerPhone,
+            address: sanitizedAddress,
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude),
+            correctedLatitude: parseFloat(correctedLatitude),
+            correctedLongitude: parseFloat(correctedLongitude),
+            paymentAmount: bulkCode.unitPrice,
+            paymentMethod: 'bulk_code',
+            paymentReferenceId: `CODE-${accessCode}`,
+            paymentStatus: 'code_redeemed',
+            redeemedCode: accessCode.toUpperCase(),
+            redemptionMethod: 'bulk_code',
+            qrCode: qrUrl,
+            isActive: true
+        });
+
+        await newPin.save();
+
+        // Mark code as used
+        bulkCode.isUsed = true;
+        bulkCode.usedAt = new Date();
+        bulkCode.usedByPhone = customerPhone;
+        bulkCode.redeemedPinId = newPin.pinId;
+        await bulkCode.save();
+
+        console.log(`✅ Pin created with code: ${accessCode} for ${customerPhone}`);
+
+        res.json({
+            success: true,
+            message: 'Pin created successfully with access code!',
+            pin: {
+                pinId: newPin.pinId,
+                qrCode: newPin.qrCode,
+                locationName: newPin.locationName,
+                address: newPin.address,
+                correctedLatitude: newPin.correctedLatitude,
+                correctedLongitude: newPin.correctedLongitude,
+                createdAt: newPin.createdAt,
+                redemptionMethod: 'bulk_code'
+            }
+        });
+
+    } catch (error) {
+        console.error('Code redemption error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to create pin with access code'
         });
     }
 });

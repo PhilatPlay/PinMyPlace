@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Purchase Success - dropLogik</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .code-list {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .code-item {
+            background: white;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border-left: 4px solid #28a745;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .copy-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .copy-btn:hover {
+            background: #0056b3;
+        }
+        .download-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .download-btn {
+            background: #28a745;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .download-btn:hover {
+            background: #218838;
+        }
+        .info-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✅ Bulk Purchase Successful!</h1>
+            <p>Your access codes are ready</p>
+        </div>
+
+        <div class="card">
+            <div id="loadingMessage" style="text-align: center; padding: 40px;">
+                <p>⏳ Generating your access codes...</p>
+            </div>
+
+            <div id="successContent" style="display: none;">
+                <h2>📦 Your Access Codes</h2>
+                <p><strong>Quantity:</strong> <span id="quantity"></span> codes</p>
+                <p><strong>Price per code:</strong> ₱<span id="unitPrice"></span></p>
+                <p><strong>Total paid:</strong> ₱<span id="totalPaid"></span></p>
+                <p><strong>Expires:</strong> <span id="expiresAt"></span></p>
+
+                <div class="info-box">
+                    <strong>💡 How to use these codes:</strong>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li>Each code can be used ONCE to create a pin</li>
+                        <li>Share codes with customers or use for yourself</li>
+                        <li>Codes expire in 180 days if not used</li>
+                        <li>Keep your codes secure - treat them like cash!</li>
+                    </ul>
+                </div>
+
+                <div class="code-list" id="codeList"></div>
+
+                <div class="download-section">
+                    <button class="download-btn" onclick="downloadAsTxt()">
+                        📄 Download as Text File
+                    </button>
+                    <button class="download-btn" onclick="copyAllCodes()">
+                        📋 Copy All Codes
+                    </button>
+                </div>
+
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="/" style="color: #007bff; text-decoration: none; font-size: 16px;">
+                        ← Back to Home
+                    </a>
+                </div>
+            </div>
+
+            <div id="errorMessage" style="display: none; color: red; text-align: center; padding: 40px;"></div>
+        </div>
+    </div>
+
+    <script>
+        let allCodes = [];
+
+        async function loadCodes() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const paymentRef = urlParams.get('ref');
+
+                if (!paymentRef) {
+                    throw new Error('No payment reference found');
+                }
+
+                const response = await fetch('/api/bulk/verify-and-generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentReferenceId: paymentRef })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to generate codes');
+                }
+
+                allCodes = data.codes;
+                displayCodes(data);
+
+            } catch (error) {
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('errorMessage').textContent = error.message;
+            }
+        }
+
+        function displayCodes(data) {
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('successContent').style.display = 'block';
+
+            document.getElementById('quantity').textContent = data.quantity;
+            document.getElementById('unitPrice').textContent = data.unitPrice;
+            document.getElementById('totalPaid').textContent = data.totalPaid;
+            document.getElementById('expiresAt').textContent = new Date(data.expiresAt).toLocaleDateString();
+
+            const codeList = document.getElementById('codeList');
+            codeList.innerHTML = data.codes.map((item, index) => `
+                <div class="code-item">
+                    <span>${index + 1}. ${item.code}</span>
+                    <button class="copy-btn" onclick="copyCode('${item.code}', this)">Copy</button>
+                </div>
+            `).join('');
+        }
+
+        function copyCode(code, button) {
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = button.textContent;
+                button.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        function copyAllCodes() {
+            const codesText = allCodes.map((item, i) => `${i + 1}. ${item.code}`).join('\n');
+            navigator.clipboard.writeText(codesText).then(() => {
+                alert('All codes copied to clipboard!');
+            });
+        }
+
+        function downloadAsTxt() {
+            const timestamp = new Date().toISOString().split('T')[0];
+            const codesText = `dropLogik Bulk Purchase Codes\n` +
+                             `Date: ${new Date().toLocaleString()}\n` +
+                             `Quantity: ${allCodes.length} codes\n` +
+                             `Expires: ${new Date(allCodes[0].expiresAt).toLocaleDateString()}\n\n` +
+                             `IMPORTANT: Keep these codes secure!\n` +
+                             `Each code can only be used ONCE.\n\n` +
+                             `YOUR CODES:\n` +
+                             `${'-'.repeat(50)}\n` +
+                             allCodes.map((item, i) => `${i + 1}. ${item.code}`).join('\n');
+
+            const blob = new Blob([codesText], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `droplogik-codes-${timestamp}.txt`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Load codes on page load
+        window.addEventListener('load', loadCodes);
+    </script>
+</body>
+</html>

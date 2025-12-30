@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Purchase - dropLogik</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 Bulk Purchase Access Codes</h1>
+            <p>Buy in bulk and resell for profit!</p>
+        </div>
+
+        <div class="card" style="background: #e8f4fd; border-left: 4px solid #007bff;">
+            <h3>💰 Wholesale Pricing</h3>
+            <div style="margin: 15px 0;">
+                <p style="font-size: 18px; margin: 10px 0;">
+                    <strong>10-49 codes:</strong> ₱75 per code 
+                    <span style="color: #28a745;">(25% discount)</span>
+                </p>
+                <p style="font-size: 18px; margin: 10px 0;">
+                    <strong>50+ codes:</strong> ₱50 per code 
+                    <span style="color: #28a745;">(50% discount)</span>
+                </p>
+            </div>
+            <p style="margin-top: 15px; color: #666; font-size: 14px;">
+                Retail price: ₱100 per pin - Resell and keep the profit!
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>🎯 How It Works</h3>
+            <ol style="line-height: 2; color: #333;">
+                <li><strong>Buy codes in bulk</strong> - Get instant discount</li>
+                <li><strong>Receive access codes</strong> - Download or copy all codes</li>
+                <li><strong>Resell to customers</strong> - At your own price (recommended: ₱80-100)</li>
+                <li><strong>Customers redeem codes</strong> - They create their pins instantly</li>
+                <li><strong>Keep your profit</strong> - No commission split with us!</li>
+            </ol>
+
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                <strong>📊 Example Profit:</strong>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li>Buy 50 codes at ₱50 each = ₱2,500</li>
+                    <li>Sell 50 codes at ₱90 each = ₱4,500</li>
+                    <li><strong style="color: #28a745;">Your profit = ₱2,000</strong></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📝 Purchase Form</h3>
+            
+            <div class="form-group">
+                <label>Quantity (minimum 10):</label>
+                <input type="number" id="quantity" min="10" value="10" onchange="updateBulkPrice()">
+                <small style="color: #666;">Enter how many codes you want to purchase</small>
+            </div>
+
+            <div class="form-group">
+                <label>Your Email:</label>
+                <input type="email" id="email" placeholder="your@email.com">
+                <small style="color: #666;">We'll send the codes here too</small>
+            </div>
+
+            <div class="form-group">
+                <label>Your Mobile Number:</label>
+                <input type="tel" id="phone" placeholder="+60123456789 or 09171234567">
+                <small style="color: #666;">For verification and support</small>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                    <span>Quantity:</span>
+                    <strong id="displayQuantity">10</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                    <span>Price per code:</span>
+                    <strong id="displayUnitPrice">₱75</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin: 15px 0; padding-top: 15px; border-top: 2px solid #dee2e6; font-size: 20px;">
+                    <span>Total:</span>
+                    <strong id="displayTotal" style="color: #28a745;">₱750</strong>
+                </div>
+            </div>
+
+            <button onclick="proceedToBulkPayment()" class="register-btn" style="background: #28a745 !important; font-size: 18px;">
+                💳 Proceed to Payment
+            </button>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="/" style="color: #007bff; text-decoration: underline;">← Back to create single pin</a>
+            </div>
+        </div>
+
+        <div class="card" style="background: #f8f9fa;">
+            <h3>❓ Frequently Asked Questions</h3>
+            
+            <details style="margin: 15px 0; cursor: pointer;">
+                <summary style="font-weight: bold; padding: 10px; background: white; border-radius: 6px;">
+                    How long are codes valid?
+                </summary>
+                <p style="padding: 15px; color: #666;">
+                    All codes are valid for 180 days (6 months) from purchase. Use them or resell them within this period.
+                </p>
+            </details>
+
+            <details style="margin: 15px 0; cursor: pointer;">
+                <summary style="font-weight: bold; padding: 10px; background: white; border-radius: 6px;">
+                    Can codes be used multiple times?
+                </summary>
+                <p style="padding: 15px; color: #666;">
+                    No. Each code can only be used ONCE to create one pin. After redemption, the code becomes invalid.
+                </p>
+            </details>
+
+            <details style="margin: 15px 0; cursor: pointer;">
+                <summary style="font-weight: bold; padding: 10px; background: white; border-radius: 6px;">
+                    What if my customer loses their code?
+                </summary>
+                <p style="padding: 15px; color: #666;">
+                    As the reseller, keep track of which codes you've sold. We cannot replace lost codes.
+                </p>
+            </details>
+
+            <details style="margin: 15px 0; cursor: pointer;">
+                <summary style="font-weight: bold; padding: 10px; background: white; border-radius: 6px;">
+                    Can I get a refund?
+                </summary>
+                <p style="padding: 15px; color: #666;">
+                    Unused codes can be refunded within 30 days of purchase. Contact team@blocklogik.com for refund requests.
+                </p>
+            </details>
+        </div>
+    </div>
+
+    <script>
+        function updateBulkPrice() {
+            const quantity = parseInt(document.getElementById('quantity').value) || 10;
+            
+            // Ensure minimum quantity
+            if (quantity < 10) {
+                document.getElementById('quantity').value = 10;
+                return;
+            }
+
+            // Calculate unit price based on tier
+            let unitPrice = 75; // Default tier 1 (10-49)
+            if (quantity >= 50) {
+                unitPrice = 50; // Tier 2 (50+)
+            }
+
+            const total = quantity * unitPrice;
+
+            // Update display
+            document.getElementById('displayQuantity').textContent = quantity;
+            document.getElementById('displayUnitPrice').textContent = `₱${unitPrice}`;
+            document.getElementById('displayTotal').textContent = `₱${total.toLocaleString()}`;
+        }
+
+        async function proceedToBulkPayment() {
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+
+            // Validation
+            if (quantity < 10) {
+                alert('Minimum purchase is 10 codes');
+                return;
+            }
+
+            if (!email || !email.includes('@')) {
+                alert('Please enter a valid email address');
+                return;
+            }
+
+            if (!phone) {
+                alert('Please enter your mobile number');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/bulk/purchase', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ quantity, email, phone })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert(data.error || 'Failed to create bulk purchase');
+                    return;
+                }
+
+                // Redirect to payment link
+                window.location.href = data.paymentLink;
+
+            } catch (error) {
+                console.error('Bulk purchase error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        }
+
+        // Initialize price display
+        window.addEventListener('load', updateBulkPrice);
+    </script>
+</body>
+</html>

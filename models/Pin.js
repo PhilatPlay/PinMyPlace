@@ -55,18 +55,19 @@ const pinSchema = new mongoose.Schema({
     },
     paymentStatus: {
         type: String,
-        enum: ['pending', 'verified', 'failed'],
+        enum: ['pending', 'verified', 'failed', 'code_redeemed'],
         default: 'pending'
     },
-    // Agent info (if sold by agent)
-    soldByAgent: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Agent',
-        default: null
+    // Bulk code redemption (alternative to payment)
+    redeemedCode: {
+        type: String,
+        default: null,
+        uppercase: true
     },
-    agentCommission: {
-        type: Number,
-        default: 0 // ₱50 if sold by agent
+    redemptionMethod: {
+        type: String,
+        enum: ['payment', 'bulk_code'],
+        default: 'payment'
     },
     // QR Code
     qrCode: {
@@ -99,7 +100,7 @@ const pinSchema = new mongoose.Schema({
 // Index for faster queries
 pinSchema.index({ pinId: 1 });
 pinSchema.index({ customerPhone: 1 });
-pinSchema.index({ soldByAgent: 1, createdAt: -1 });
+pinSchema.index({ redeemedCode: 1 });
 pinSchema.index({ expiresAt: 1 });
 
 // Method to check if pin is expired

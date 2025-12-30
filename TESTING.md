@@ -24,7 +24,7 @@ Navigate to `http://localhost:3000`
 ### Step 4: Pay with GCash
 
 1. Enter your mobile number (11 digits, e.g., 09171234567)
-2. Click **"Pay ₱50 via GCash Now"**
+2. Click **"Pay ₱100 via GCash Now""
 3. You'll be redirected to PayMongo's payment page
 
 ### Step 5: Complete Payment
@@ -101,7 +101,7 @@ POST http://localhost:3000/api/agent/register
 1. Stay logged in as agent
 2. Follow the same pin creation flow
 3. Your agent ID will be automatically attached
-4. You'll earn ₱25 commission per pin
+4. You'll earn ₱50 commission per pin
 
 ### Step 4: Check Agent Stats
 
@@ -177,7 +177,7 @@ Watch the terminal running `npm start` for:
 
 ## Expected Flow
 
-1. **User Action**: Clicks "Pay ₱50 via GCash Now"
+1. **User Action**: Clicks "Pay ₱100 via GCash Now"
 2. **Frontend**: Calls `/api/pin/initiate-payment` with location data
 3. **Backend**: Creates PayMongo payment link with metadata
 4. **Redirect**: User sent to PayMongo checkout page

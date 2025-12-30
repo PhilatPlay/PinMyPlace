@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['user', 'admin', 'partner'],
+        enum: ['user', 'admin'],
         default: 'user'
     },
     name: {
@@ -34,20 +34,6 @@ const userSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
-    },
-    // Premium features
-    isPremium: {
-        type: Boolean,
-        default: false
-    },
-    premiumPlan: {
-        type: String,
-        enum: ['monthly', 'yearly', null],
-        default: null
-    },
-    premiumExpiresAt: {
-        type: Date,
-        default: null
     }
 });// Hash password before saving
 userSchema.pre('save', async function (next) {

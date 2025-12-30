@@ -41,7 +41,7 @@
 
 ## 💳 Payment Testing
 
-- [ ] Clicked "Pay ₱50 via GCash Now"
+- [ ] Clicked "Pay ₱100 via GCash Now"
 - [ ] Redirected to PayMongo payment page
 - [ ] Used test GCash credentials from PayMongo
 - [ ] Completed test payment
@@ -55,7 +55,7 @@
 - [ ] Logged in as agent
 - [ ] Dashboard shows with stats
 - [ ] Created pin while logged in as agent
-- [ ] Commission tracked correctly (₱25)
+- [ ] Commission tracked correctly (₱50)
 
 ## 🌐 Production Preparation (When Ready)
 
@@ -65,7 +65,7 @@
 - [ ] SSL certificate installed (HTTPS)
 - [ ] Environment variables set on hosting platform
 - [ ] PayMongo webhooks configured with production URL
-- [ ] Tested with real ₱50 GCash payment
+- [ ] Tested with real ₱100 GCash payment
 - [ ] Confirmed QR code generation works
 - [ ] Agent system tested end-to-end
 
@@ -119,7 +119,7 @@
 When you can:
 
 - ✅ Drop a pin on the map
-- ✅ Click "Pay ₱50"
+- ✅ Click "Pay ₱100"
 - ✅ Complete payment
 - ✅ See QR code with coordinates
 - ✅ Download the QR code
