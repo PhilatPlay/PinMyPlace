@@ -31,15 +31,38 @@
             id="authLink"
             href="#"
             onclick="toggleAuth(); return false;"
-            style="color: white; text-decoration: underline"
+            style="color: white; text-decoration: none"
           >
-            Login / Sign Up
+           Login / Sign Up
           </a>
         </p>
       </div>
 
       <!-- Main Pin Creation Section (No Login Required) -->
       <div id="mainPinSection">
+        <!-- Currency Selector -->
+        <div class="card" style="background: #f8f9fa; padding: 15px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+            <div style="flex: 1; min-width: 200px;">
+              <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px;">💱 Select Currency:</label>
+              <select id="homeCurrencySelect" onchange="updateHomeCurrency()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd; width: 100%; font-size: 14px;">
+                <option value="PHP">🇵🇭 Philippine Peso (₱)</option>
+                <option value="MYR">🇲🇾 Malaysian Ringgit (RM)</option>
+                <option value="SGD">🇸🇬 Singapore Dollar (S$)</option>
+                <option value="THB">🇹🇭 Thai Baht (฿)</option>
+                <option value="IDR">🇮🇩 Indonesian Rupiah (Rp)</option>
+                <option value="VND">🇻🇳 Vietnamese Dong (₫)</option>
+                <option value="HKD">🇭🇰 Hong Kong Dollar (HK$)</option>
+                <option value="USD">🌏 US Dollar ($)</option>
+              </select>
+            </div>
+            <div style="font-size: 13px; color: #666; flex: 1; min-width: 200px;">
+              💡 Prices shown in your selected currency<br>
+              <a href="/bulk-purchase.html" style="color: #007bff; text-decoration: underline;">📦 Buy codes in bulk</a> - Get wholesale discounts!
+            </div>
+          </div>
+        </div>
+
         <!-- How It Works -->
         <div
           class="card"
@@ -75,7 +98,9 @@
             <input
               type="text"
               id="locationName"
+              name="location-label"
               placeholder="e.g., river camp site, beach hut, fishing spot 1"
+              autocomplete="off"
             />
             <small style="color: #666"
               >This helps you identify this pin later</small
@@ -91,7 +116,10 @@
               <input
                 type="text"
                 id="mapAddress"
+                name="address-details"
                 placeholder="e.g., on the 3rd floor # 302, entrance to building facing Jollibee."
+                autocomplete="off"
+                data-form-type="other"
               />
               <small style="color: #666"
                 >Help delivery services find you easier</small
@@ -152,6 +180,10 @@
         <div class="card" id="paymentSection" style="display: none">
           <h3>💳 Step 2: Complete Your Pin</h3>
           
+          <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+            <small style="color: #666;">Reference Number: <strong id="paymentRefNumber">-</strong></small>
+          </div>
+          
           <!-- Payment Method Selection -->
           <div style="margin-bottom: 20px; text-align: center;">
             <button 
@@ -159,7 +191,7 @@
               onclick="showPaymentMode()"
               style="padding: 10px 20px; margin: 5px; border: 2px solid #007bff; background: #007bff; color: white; border-radius: 8px; cursor: pointer; font-size: 16px;"
             >
-              💳 Pay Now (₱100)
+              💳 Pay Now (<span class="dynamic-price">₱100</span>)
             </button>
             <button 
               id="codeModeBtn" 
@@ -173,7 +205,7 @@
           <!-- Payment Mode -->
           <div id="paymentMode">
             <p style="color: #666; margin-bottom: 20px">
-              Choose your payment method: GCash, Maya (PayMaya), GrabPay, or
+              Available payment methods: GCash, Maya (PayMaya), GrabPay, or
               Credit/Debit Card
             </p>
 
@@ -278,7 +310,7 @@
             disabled
             style="opacity: 0.5; cursor: not-allowed"
           >
-            💰 Pay PHP 100 Now
+            💰 Pay <span id="paymentAmount">₱100</span> Now
           </button>
 
           <div
@@ -640,9 +672,9 @@
           >
             <strong>💡 Why create an account?</strong><br />
             <p style="margin: 10px 0">
-              • Buy codes in bulk at ₱50-75 each<br>
-              • Track your purchases and usage<br>
-              • Resell codes for ₱80-100 profit per code
+              • Buy access codes in bulk | 10 or more at ₱50 each<br>
+              • Be able to create a location GPS QRCode with each access code used as payment<br>
+              • Use access codes for payment when creating location GPS QRCodes for your customers at your price. Earn a profit.
             </p>
           </div>
         </div>
@@ -695,9 +727,32 @@
     <script src="/js/payment-per-pin.js?v=2"></script>
     <script src="/js/user.js?v=2"></script>
     <script>
+      // Clear any auto-filled values from form fields
+      function clearAutoFilledFields() {
+        // Clear Step 1 fields that shouldn't have auto-fill
+        const locationName = document.getElementById('locationName');
+        const mapAddress = document.getElementById('mapAddress');
+        
+        if (locationName && locationName.value) {
+          console.log('Clearing auto-filled locationName');
+          locationName.value = '';
+        }
+        
+        if (mapAddress && mapAddress.value) {
+          console.log('Clearing auto-filled mapAddress');
+          mapAddress.value = '';
+        }
+      }
+
       // Auto-initialize map and detect currency when page loads
       window.addEventListener("DOMContentLoaded", async function () {
         await detectUserCurrency();
+        
+        // Initialize home page currency selector
+        initializeHomeCurrency();
+        
+        // Clear any auto-filled values after a short delay (browsers auto-fill after load)
+        setTimeout(clearAutoFilledFields, 100);
         
         // Check if user is logged in first
         const savedToken = localStorage.getItem('userToken');
@@ -735,7 +790,7 @@
           if (isLoggedIn) {
             authLink.textContent = 'Logout';
           } else {
-            authLink.textContent = 'Login / Sign Up';
+            authLink.textContent = 'Resellers Login / Sign Up';
           }
         }
       }
@@ -755,6 +810,48 @@
             payButton.style.opacity = "0.5";
             payButton.style.cursor = "not-allowed";
           }
+        }
+      }
+
+      // Update currency throughout the home page when user selects
+      function updateHomeCurrency() {
+        const currencyCode = document.getElementById("homeCurrencySelect")?.value || 'PHP';
+        const currencyInfo = getCurrencyInfo(currencyCode);
+        
+        // Update all dynamic-price elements (How It Works section, buttons)
+        const priceElements = document.querySelectorAll('.dynamic-price');
+        priceElements.forEach(el => {
+          el.textContent = `${currencyInfo.symbol}${currencyInfo.price.toLocaleString()}`;
+        });
+        
+        // Update payment amount in Step 2 button
+        const paymentAmount = document.getElementById('paymentAmount');
+        if (paymentAmount) {
+          paymentAmount.textContent = `${currencyInfo.symbol}${currencyInfo.price.toLocaleString()}`;
+        }
+        
+        // Update currency select in payment section (Step 2) if it exists
+        const currencySelect = document.getElementById('currencySelect');
+        if (currencySelect) {
+          currencySelect.value = currencyCode;
+        }
+        
+        // Save preference
+        saveCurrencyPreference(currencyCode);
+        
+        console.log(`💰 Home currency updated to: ${currencyCode}`);
+      }
+
+      // Initialize home page currency on load
+      function initializeHomeCurrency() {
+        const saved = getSavedCurrency();
+        const detected = saved || detectCurrencyFromLocale();
+        
+        const homeCurrencySelect = document.getElementById('homeCurrencySelect');
+        if (homeCurrencySelect) {
+          homeCurrencySelect.value = detected;
+          updateHomeCurrency();
+          console.log(`💰 Home currency initialized: ${detected} ${saved ? '(saved preference)' : '(auto-detected)'}`);
         }
       }
 

@@ -3,21 +3,10 @@
 let currentPinData = null;
 let paymentReferenceNumber = null;
 
-// Currency information
-const CURRENCIES = {
-    PHP: { symbol: '₱', price: 100, name: 'PHP 100' },
-    MYR: { symbol: 'RM', price: 10, name: 'RM 10' },
-    SGD: { symbol: 'S$', price: 3, name: 'S$ 3' },
-    THB: { symbol: '฿', price: 70, name: '฿ 70' },
-    IDR: { symbol: 'Rp', price: 32000, name: 'Rp 32,000' },
-    VND: { symbol: '₫', price: 50000, name: '₫ 50,000' },
-    USD: { symbol: '$', price: 2, name: '$ 2' }
-};
-
 // Update payment amount display when currency changes
 function updatePaymentAmount() {
     const currency = document.getElementById("currencySelect")?.value || 'PHP';
-    const currencyInfo = CURRENCIES[currency];
+    const currencyInfo = getCurrencyInfo(currency);
     const amountDisplay = document.getElementById("paymentAmount");
     const button = document.getElementById("payButton");
 
@@ -25,18 +14,11 @@ function updatePaymentAmount() {
         amountDisplay.textContent = `${currencyInfo.symbol}${currencyInfo.price.toLocaleString()}`;
     }
     if (button) {
-        button.innerHTML = `💰 Pay ${currencyInfo.name} Now`;
+        button.innerHTML = `💰 Pay ${currencyInfo.symbol}${currencyInfo.price.toLocaleString()} Now`;
     }
-}// Auto-detect currency based on user's coordinates
-function detectCurrency(lat, lng) {
-    // Rough geographic detection for SE Asia
-    if (lat >= 4 && lat <= 21 && lng >= 116 && lng <= 127) return 'PHP'; // Philippines
-    if (lat >= 1 && lat <= 7 && lng >= 100 && lng <= 120) return 'MYR'; // Malaysia
-    if (lat >= 1.2 && lat <= 1.5 && lng >= 103.6 && lng <= 104) return 'SGD'; // Singapore
-    if (lat >= 5 && lat <= 20 && lng >= 97 && lng <= 106) return 'THB'; // Thailand
-    if (lat >= -11 && lat <= 6 && lng >= 95 && lng <= 141) return 'IDR'; // Indonesia
-    if (lat >= 8 && lat <= 24 && lng >= 102 && lng <= 110) return 'VND'; // Vietnam
-    return 'PHP'; // Default
+    
+    // Save preference when user manually changes it
+    saveCurrencyPreference(currency);
 }
 
 // Proceed to payment after pin is set
@@ -79,12 +61,17 @@ function proceedToPayment() {
     document.getElementById("paymentSection").style.display = "block";
     document.getElementById("paymentRefNumber").textContent = paymentReferenceNumber;
 
-    // Auto-detect and set currency based on coordinates
-    const detectedCurrency = detectCurrency(correctedPosition.lat, correctedPosition.lng);
+    // Get currency from home selector first, then saved preference, then auto-detect from coordinates
+    const homeCurrency = document.getElementById("homeCurrencySelect")?.value;
+    const saved = getSavedCurrency();
+    const detectedFromCoords = detectCurrencyFromCoordinates(correctedPosition.lat, correctedPosition.lng);
+    const finalCurrency = homeCurrency || saved || detectedFromCoords;
+    
     const currencySelect = document.getElementById("currencySelect");
     if (currencySelect) {
-        currencySelect.value = detectedCurrency;
+        currencySelect.value = finalCurrency;
         updatePaymentAmount();
+        console.log(`💰 Currency ${homeCurrency ? 'from home selector' : saved ? 'loaded from preference' : 'auto-detected from map'}: ${finalCurrency}`);
     }
 
     // Scroll to payment section

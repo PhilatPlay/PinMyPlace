@@ -4,6 +4,7 @@ const rateLimit = require('express-rate-limit');
 const validator = require('validator');
 const BulkCode = require('../models/BulkCode');
 const { createGCashPayment, verifyPayment } = require('../services/paymentService');
+const { getCurrency } = require('../config/currencies');
 
 // Rate limiter for bulk purchases
 const bulkPurchaseLimiter = rateLimit({
@@ -12,17 +13,16 @@ const bulkPurchaseLimiter = rateLimit({
     message: { success: false, error: 'Too many bulk purchase requests. Please try again later.' }
 });
 
-// Pricing tiers
-const BULK_PRICING = {
-    tier1: { min: 10, max: 49, price: 75 },    // ₱75 per code
-    tier2: { min: 50, max: 999, price: 50 }    // ₱50 per code
-};
-
-function getBulkPrice(quantity) {
-    if (quantity >= BULK_PRICING.tier2.min) {
-        return BULK_PRICING.tier2.price;
-    } else if (quantity >= BULK_PRICING.tier1.min) {
-        return BULK_PRICING.tier1.price;
+// Calculate bulk price based on quantity and currency
+function getBulkPrice(quantity, currencyCode = 'PHP') {
+    const currency = getCurrency(currencyCode);
+    const basePrice = currency.price;
+    
+    // Apply discount tiers
+    if (quantity >= 50) {
+        return Math.round(basePrice * 0.50); // 50% discount
+    } else if (quantity >= 10) {
+        return Math.round(basePrice * 0.75); // 25% discount
     }
     return null; // Not eligible for bulk pricing
 }
@@ -49,7 +49,7 @@ function validateBulkPurchase(data) {
 // POST /api/bulk/purchase - Initiate bulk code purchase
 router.post('/purchase', bulkPurchaseLimiter, async (req, res) => {
     try {
-        const { quantity, email, phone } = req.body;
+        const { quantity, email, phone, currency = 'PHP' } = req.body;
 
         // Validate input
         const errors = validateBulkPurchase({ quantity, email, phone });
@@ -57,7 +57,7 @@ router.post('/purchase', bulkPurchaseLimiter, async (req, res) => {
             return res.status(400).json({ success: false, errors });
         }
 
-        const unitPrice = getBulkPrice(parseInt(quantity));
+        const unitPrice = getBulkPrice(parseInt(quantity), currency);
         if (!unitPrice) {
             return res.status(400).json({ 
                 success: false, 
@@ -68,6 +68,7 @@ router.post('/purchase', bulkPurchaseLimiter, async (req, res) => {
         const totalAmount = unitPrice * parseInt(quantity);
         const cleanEmail = validator.normalizeEmail(email);
         const cleanPhone = phone.replace(/[\s\-().]/g, '');
+        const currencyInfo = getCurrency(currency);
 
         // Create payment link
         const paymentResult = await createGCashPayment(
@@ -77,6 +78,7 @@ router.post('/purchase', bulkPurchaseLimiter, async (req, res) => {
                 type: 'bulk_purchase',
                 quantity: quantity,
                 unitPrice: unitPrice,
+                currency: currency,
                 email: cleanEmail,
                 phone: cleanPhone
             },
@@ -96,7 +98,8 @@ router.post('/purchase', bulkPurchaseLimiter, async (req, res) => {
             referenceNumber: paymentResult.referenceNumber,
             quantity: quantity,
             unitPrice: unitPrice,
-            totalAmount: totalAmount
+            totalAmount: totalAmount,
+            currency: currencyInfo
         });
 
     } catch (error) {

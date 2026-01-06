@@ -1,5 +1,65 @@
 // Utility Functions
 
+// Currency definitions (matches server-side config)
+const CURRENCIES = {
+    PHP: { code: 'PHP', symbol: '₱', price: 100, name: 'Philippine Peso', country: 'Philippines', flag: '🇵🇭' },
+    MYR: { code: 'MYR', symbol: 'RM', price: 10, name: 'Malaysian Ringgit', country: 'Malaysia', flag: '🇲🇾' },
+    SGD: { code: 'SGD', symbol: 'S$', price: 3, name: 'Singapore Dollar', country: 'Singapore', flag: '🇸🇬' },
+    THB: { code: 'THB', symbol: '฿', price: 70, name: 'Thai Baht', country: 'Thailand', flag: '🇹🇭' },
+    IDR: { code: 'IDR', symbol: 'Rp', price: 32000, name: 'Indonesian Rupiah', country: 'Indonesia', flag: '🇮🇩' },
+    VND: { code: 'VND', symbol: '₫', price: 50000, name: 'Vietnamese Dong', country: 'Vietnam', flag: '🇻🇳' },
+    USD: { code: 'USD', symbol: '$', price: 2, name: 'US Dollar', country: 'International', flag: '🌏' },
+    HKD: { code: 'HKD', symbol: 'HK$', price: 16, name: 'Hong Kong Dollar', country: 'Hong Kong', flag: '🇭🇰' }
+};
+
+// Get saved currency preference
+function getSavedCurrency() {
+    const saved = localStorage.getItem('preferredCurrency');
+    return saved && CURRENCIES[saved] ? saved : null;
+}
+
+// Save currency preference
+function saveCurrencyPreference(currencyCode) {
+    if (CURRENCIES[currencyCode]) {
+        localStorage.setItem('preferredCurrency', currencyCode);
+        console.log(`💾 Saved currency preference: ${currencyCode}`);
+    }
+}
+
+// Auto-detect currency from browser locale (fallback)
+function detectCurrencyFromLocale() {
+    try {
+        const locale = navigator.language || navigator.userLanguage;
+        const countryCode = locale.split('-')[1]?.toUpperCase();
+        
+        const countryToCurrency = {
+            'PH': 'PHP', 'MY': 'MYR', 'SG': 'SGD', 'TH': 'THB',
+            'ID': 'IDR', 'VN': 'VND', 'HK': 'HKD', 'US': 'USD'
+        };
+        
+        return countryToCurrency[countryCode] || 'PHP';
+    } catch (error) {
+        return 'PHP';
+    }
+}
+
+// Auto-detect currency based on coordinates (for main page with map)
+function detectCurrencyFromCoordinates(lat, lng) {
+    if (lat >= 4 && lat <= 21 && lng >= 116 && lng <= 127) return 'PHP'; // Philippines
+    if (lat >= 1 && lat <= 7 && lng >= 100 && lng <= 120) return 'MYR'; // Malaysia
+    if (lat >= 1.2 && lat <= 1.5 && lng >= 103.6 && lng <= 104) return 'SGD'; // Singapore
+    if (lat >= 5 && lat <= 20 && lng >= 97 && lng <= 106) return 'THB'; // Thailand
+    if (lat >= -11 && lat <= 6 && lng >= 95 && lng <= 141) return 'IDR'; // Indonesia
+    if (lat >= 8 && lat <= 24 && lng >= 102 && lng <= 110) return 'VND'; // Vietnam
+    if (lat >= 22 && lat <= 23 && lng >= 113 && lng <= 115) return 'HKD'; // Hong Kong
+    return 'PHP'; // Default
+}
+
+// Get currency info by code
+function getCurrencyInfo(code) {
+    return CURRENCIES[code] || CURRENCIES.PHP;
+}
+
 // Detect user's currency based on location
 async function detectUserCurrency() {
     try {
