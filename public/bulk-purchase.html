@@ -18,11 +18,7 @@
             <h3>💰 Wholesale Pricing</h3>
             <div style="margin: 15px 0;">
                 <p style="font-size: 18px; margin: 10px 0;">
-                    <strong>10-49 codes:</strong> <span id="tier1Price">₱75</span> per code 
-                    <span style="color: #28a745;">(25% discount)</span>
-                </p>
-                <p style="font-size: 18px; margin: 10px 0;">
-                    <strong>50+ codes:</strong> <span id="tier2Price">₱50</span> per code 
+                    <strong>10+ codes:</strong> <span id="bulkPrice">₱50</span> per code 
                     <span style="color: #28a745;">(50% discount)</span>
                 </p>
             </div>
@@ -44,9 +40,9 @@
             <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px;">
                 <strong>📊 Example Profit:</strong>
                 <ul style="margin: 10px 0; padding-left: 20px;">
-                    <li>Buy 50 codes at <span id="exampleBuyPrice">₱50</span> each = <span id="exampleBuyCost">₱2,500</span></li>
-                    <li>Sell 50 codes at <span id="exampleSellPrice">₱90</span> each = <span id="exampleSellRevenue">₱4,500</span></li>
-                    <li><strong style="color: #28a745;">Your profit = <span id="exampleProfit">₱2,000</span></strong></li>
+                    <li>Buy 10 codes at <span id="exampleBuyPrice">₱50</span> each = <span id="exampleBuyCost">₱500</span></li>
+                    <li>Sell 10 codes at <span id="exampleSellPrice">₱90</span> each = <span id="exampleSellRevenue">₱900</span></li>
+                    <li><strong style="color: #28a745;">Your profit = <span id="exampleProfit">₱400</span></strong></li>
                 </ul>
             </div>
         </div>
@@ -167,11 +163,8 @@
             // Calculate base unit price in selected currency
             const basePrice = currencyInfo.price; // Price per single pin
             
-            // Apply bulk discount tiers (same percentages as PHP)
-            let discountRate = 0.75; // 25% discount for 10-49 (tier 1)
-            if (quantity >= 50) {
-                discountRate = 0.50; // 50% discount for 50+ (tier 2)
-            }
+            // Apply 50% discount for 10+ codes
+            const discountRate = 0.50; // 50% discount for all bulk purchases
             
             const unitPrice = Math.round(basePrice * discountRate);
             const total = quantity * unitPrice;
@@ -182,17 +175,16 @@
             document.getElementById('displayTotal').textContent = `${currencyInfo.symbol}${total.toLocaleString()}`;
             
             // Update wholesale pricing display
-            const tier1Price = Math.round(basePrice * 0.75);
-            const tier2Price = Math.round(basePrice * 0.50);
-            document.getElementById('tier1Price').textContent = `${currencyInfo.symbol}${tier1Price.toLocaleString()}`;
-            document.getElementById('tier2Price').textContent = `${currencyInfo.symbol}${tier2Price.toLocaleString()}`;
+            const bulkPrice = Math.round(basePrice * 0.50);
+            document.getElementById('bulkPrice').textContent = `${currencyInfo.symbol}${bulkPrice.toLocaleString()}`;
             document.getElementById('retailPrice').textContent = `${currencyInfo.symbol}${basePrice.toLocaleString()}`;
             
-            // Update example profit calculation
-            const exampleBuyPrice = tier2Price; // 50+ tier
+            // Update example profit calculation (using 10 codes as example)
+            const exampleQuantity = 10;
+            const exampleBuyPrice = bulkPrice;
             const exampleSellPrice = Math.round(basePrice * 0.90); // Sell at 90% of retail
-            const buyCost = 50 * exampleBuyPrice;
-            const sellRevenue = 50 * exampleSellPrice;
+            const buyCost = exampleQuantity * exampleBuyPrice;
+            const sellRevenue = exampleQuantity * exampleSellPrice;
             const profit = sellRevenue - buyCost;
             
             document.getElementById('exampleBuyPrice').textContent = `${currencyInfo.symbol}${exampleBuyPrice.toLocaleString()}`;

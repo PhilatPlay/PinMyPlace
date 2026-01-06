@@ -14,15 +14,14 @@ const bulkPurchaseLimiter = rateLimit({
 });
 
 // Calculate bulk price based on quantity and currency
+// 50% discount for 10+ codes
 function getBulkPrice(quantity, currencyCode = 'PHP') {
     const currency = getCurrency(currencyCode);
     const basePrice = currency.price;
     
-    // Apply discount tiers
-    if (quantity >= 50) {
-        return Math.round(basePrice * 0.50); // 50% discount
-    } else if (quantity >= 10) {
-        return Math.round(basePrice * 0.75); // 25% discount
+    // Apply 50% discount for all bulk purchases (10+)
+    if (quantity >= 10) {
+        return Math.round(basePrice * 0.50);
     }
     return null; // Not eligible for bulk pricing
 }
