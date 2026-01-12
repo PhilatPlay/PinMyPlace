@@ -62,8 +62,7 @@ const bulkCodeSchema = new mongoose.Schema({
     }
 });
 
-// Index for fast lookup
-bulkCodeSchema.index({ code: 1 });
+// Index for fast lookup (code already indexed via unique: true)
 bulkCodeSchema.index({ isUsed: 1, expiresAt: 1 });
 
 // Method to check if code is valid
