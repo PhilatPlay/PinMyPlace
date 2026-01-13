@@ -83,7 +83,7 @@ async function detectUserCurrency() {
             // Update header price
             const headerPrice = document.getElementById('headerPrice');
             if (headerPrice) {
-                headerPrice.textContent = `Instant GPS Pin for Anywhere, Anytime, Easy Deliveries | No Address needed`;
+                headerPrice.textContent = `Gigital Addressing for Reliable Delivery -- create a scannable location for areas without formal addresses`;
             }
 
             // Update all dynamic price elements

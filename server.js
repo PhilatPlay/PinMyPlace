@@ -118,12 +118,6 @@ async function createDefaultUsers() {
             name: 'Test User'
         },
         {
-            email: 'partner@droplogik.com',
-            password: 'Partner123!@#',
-            role: 'partner',
-            name: 'Test Partner'
-        },
-        {
             email: 'philip.polo@yahoo.com',
             password: 'Philip123!@#',
             role: 'admin',
