@@ -79,8 +79,8 @@
             <div id="successContent" style="display: none;">
                 <h2>📦 Your Access Codes</h2>
                 <p><strong>Quantity:</strong> <span id="quantity"></span> codes</p>
-                <p><strong>Price per code:</strong> ₱<span id="unitPrice"></span></p>
-                <p><strong>Total paid:</strong> ₱<span id="totalPaid"></span></p>
+                <p><strong>Price per code:</strong> <span id="unitPrice"></span></p>
+                <p><strong>Total paid:</strong> <span id="totalPaid"></span></p>
                 <p><strong>Expires:</strong> <span id="expiresAt"></span></p>
 
                 <div class="info-box">
@@ -121,10 +121,19 @@
         async function loadCodes() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
-                const paymentRef = urlParams.get('ref');
+                
+                // Try multiple parameter names that different payment gateways use
+                const paymentRef = urlParams.get('ref') || 
+                                   urlParams.get('id') || 
+                                   urlParams.get('session_id') ||
+                                   urlParams.get('invoice_id') ||
+                                   urlParams.get('CHECKOUT_SESSION_ID');
+
+                console.log('Payment reference from URL:', paymentRef);
+                console.log('Full URL:', window.location.href);
 
                 if (!paymentRef) {
-                    throw new Error('No payment reference found');
+                    throw new Error('No payment reference found. Please check your payment confirmation email or contact support.');
                 }
 
                 const response = await fetch('/api/bulk/verify-and-generate', {
@@ -143,6 +152,7 @@
                 displayCodes(data);
 
             } catch (error) {
+                console.error('Error loading codes:', error);
                 document.getElementById('loadingMessage').style.display = 'none';
                 document.getElementById('errorMessage').style.display = 'block';
                 document.getElementById('errorMessage').textContent = error.message;
@@ -153,9 +163,12 @@
             document.getElementById('loadingMessage').style.display = 'none';
             document.getElementById('successContent').style.display = 'block';
 
+            // Get currency symbol and format
+            const currencySymbol = data.currency ? data.currency.symbol : '₱';
+            
             document.getElementById('quantity').textContent = data.quantity;
-            document.getElementById('unitPrice').textContent = data.unitPrice;
-            document.getElementById('totalPaid').textContent = data.totalPaid;
+            document.getElementById('unitPrice').textContent = currencySymbol + data.unitPrice.toLocaleString();
+            document.getElementById('totalPaid').textContent = currencySymbol + data.totalPaid.toLocaleString();
             document.getElementById('expiresAt').textContent = new Date(data.expiresAt).toLocaleDateString();
 
             const codeList = document.getElementById('codeList');

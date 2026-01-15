@@ -35,6 +35,10 @@ async function createStripePayment(amount, currency, description, metadata = {},
 
         const stripeCurrency = STRIPE_CURRENCY_MAP[currency] || 'usd';
 
+        // Build success URL with session_id parameter
+        // Stripe will replace {CHECKOUT_SESSION_ID} with actual session ID
+        const successUrlWithRef = `${successUrl}?session_id={CHECKOUT_SESSION_ID}`;
+
         // Create Stripe Checkout Session
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
@@ -52,7 +56,7 @@ async function createStripePayment(amount, currency, description, metadata = {},
                 },
             ],
             mode: 'payment',
-            success_url: successUrl,
+            success_url: successUrlWithRef,
             cancel_url: cancelUrl,
             metadata: metadata,
             client_reference_id: metadata.referenceNumber || `STRIPE-${Date.now()}`,

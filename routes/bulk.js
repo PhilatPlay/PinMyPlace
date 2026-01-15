@@ -3,7 +3,10 @@ const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const validator = require('validator');
 const BulkCode = require('../models/BulkCode');
+const BulkPurchaseSession = require('../models/BulkPurchaseSession');
 const { createGCashPayment, verifyPayment } = require('../services/paymentService');
+const { createXenditPayment, verifyXenditPayment } = require('../services/xenditService');
+const { createStripePayment, verifyStripePayment } = require('../services/stripeService');
 const { getCurrency } = require('../config/currencies');
 
 // Rate limiter for bulk purchases
@@ -69,20 +72,54 @@ router.post('/purchase', bulkPurchaseLimiter, async (req, res) => {
         const cleanPhone = phone.replace(/[\s\-().]/g, '');
         const currencyInfo = getCurrency(currency);
 
-        // Create payment link
-        const paymentResult = await createGCashPayment(
-            totalAmount,
-            `Bulk Purchase - ${quantity} dropLogik Pin Codes`,
-            {
-                type: 'bulk_purchase',
-                quantity: quantity,
-                unitPrice: unitPrice,
-                currency: currency,
-                email: cleanEmail,
-                phone: cleanPhone
-            },
-            `${process.env.FRONTEND_URL || 'http://localhost:3000'}/bulk-success.html`
-        );
+        const successUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/bulk-success.html`;
+        const cancelUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/bulk-purchase.html?payment=cancelled`;
+
+        // Generate a unique reference ID for tracking
+        const referenceNumber = `BULK-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+
+        const metadata = {
+            type: 'bulk_purchase',
+            quantity: quantity,
+            unitPrice: unitPrice,
+            currency: currency,
+            email: cleanEmail,
+            phone: cleanPhone,
+            referenceNumber: referenceNumber
+        };
+
+        // Payment gateway routing:
+        // 1. Xendit for SE Asia e-wallets (PHP, IDR, THB, MYR, SGD, VND)
+        // 2. Stripe for international currencies (USD, HKD, etc.)
+        let paymentResult;
+        let paymentGateway;
+
+        // Currencies supported by Xendit
+        const xenditCurrencies = ['PHP', 'IDR', 'THB', 'MYR', 'SGD', 'VND'];
+
+        if (xenditCurrencies.includes(currencyInfo.code)) {
+            // Use Xendit for SE Asia (e-wallets + local payment methods)
+            paymentGateway = 'xendit';
+            paymentResult = await createXenditPayment(
+                totalAmount,
+                currency,
+                `Bulk Purchase - ${quantity} dropLogik Pin Codes`,
+                metadata,
+                successUrl,
+                cleanPhone
+            );
+        } else {
+            // Use Stripe for international currencies (USD, HKD, etc.)
+            paymentGateway = 'stripe';
+            paymentResult = await createStripePayment(
+                totalAmount,
+                currencyInfo.code,
+                `Bulk Purchase - ${quantity} dropLogik Pin Codes`,
+                metadata,
+                successUrl,
+                cancelUrl
+            );
+        }
 
         if (!paymentResult.success) {
             return res.status(500).json({
@@ -91,10 +128,33 @@ router.post('/purchase', bulkPurchaseLimiter, async (req, res) => {
             });
         }
 
+        // For Xendit, use the referenceNumber we generated (BULK-xxx)
+        // For Stripe, use the sessionId
+        const paymentRef = paymentGateway === 'xendit' 
+            ? referenceNumber 
+            : (paymentResult.sessionId || paymentResult.referenceNumber);
+
+        // Save purchase session to database (survives payment gateway redirects)
+        const session = new BulkPurchaseSession({
+            paymentReferenceId: paymentRef,
+            quantity: parseInt(quantity),
+            unitPrice: unitPrice,
+            totalAmount: totalAmount,
+            currency: currency,
+            email: cleanEmail,
+            phone: cleanPhone,
+            paymentGateway: paymentGateway,
+            status: 'pending'
+        });
+        
+        await session.save();
+        console.log('Bulk purchase session saved:', paymentRef);
+
         res.json({
             success: true,
             paymentLink: paymentResult.paymentLink,
-            referenceNumber: paymentResult.referenceNumber,
+            referenceNumber: paymentRef,
+            paymentGateway: paymentGateway,
             quantity: quantity,
             unitPrice: unitPrice,
             totalAmount: totalAmount,
@@ -135,36 +195,104 @@ router.post('/verify-and-generate', async (req, res) => {
             });
         }
 
-        // Verify payment with PayMongo
-        const verification = await verifyPayment(paymentReferenceId);
+        // First, try to find the session by the reference ID (for Xendit which uses our custom ref)
+        let session = await BulkPurchaseSession.findOne({ paymentReferenceId });
+        
+        // If not found, it might be a Stripe session ID, so search by that field
+        if (!session) {
+            // For Stripe, the paymentReferenceId IS the session ID
+            // So we need to search by a field that stores the actual payment gateway ID
+            // Let's search all sessions and match
+            const allSessions = await BulkPurchaseSession.find({ status: 'pending' });
+            for (const s of allSessions) {
+                // Try verifying with this session's stored reference
+                if (s.paymentReferenceId === paymentReferenceId) {
+                    session = s;
+                    break;
+                }
+            }
+        }
+        
+        console.log('Session lookup result:', session ? 'found' : 'not found');
+
+        // Try verifying with both payment gateways (we don't know which was used)
+        let verification;
+        let paymentGateway = 'unknown';
+        
+        console.log('Attempting to verify payment:', paymentReferenceId);
+        
+        // Try Xendit first (most SE Asia currencies)
+        verification = await verifyXenditPayment(paymentReferenceId);
+        
+        if (verification.success && verification.isPaid) {
+            paymentGateway = 'xendit';
+            console.log('Payment verified with Xendit');
+        } else {
+            // If Xendit fails, try Stripe (for USD, HKD, etc.)
+            console.log('Xendit verification failed, trying Stripe...');
+            verification = await verifyStripePayment(paymentReferenceId);
+            if (verification.success && verification.isPaid) {
+                paymentGateway = 'stripe';
+                console.log('Payment verified with Stripe');
+            }
+        }
+
+        console.log('Verification result:', { 
+            success: verification.success, 
+            isPaid: verification.isPaid,
+            gateway: paymentGateway,
+            metadata: verification.metadata 
+        });
 
         if (!verification.success) {
+            console.error('Payment verification failed for:', paymentReferenceId);
             return res.status(400).json({
                 success: false,
-                error: 'Payment verification failed'
+                error: 'Payment verification failed. Please contact support with your payment reference.'
             });
         }
 
         if (!verification.isPaid) {
             return res.status(400).json({
                 success: false,
-                error: 'Payment not completed yet'
+                error: 'Payment not completed yet. Please wait a moment and try again.'
             });
         }
 
-        // Extract metadata
-        const metadata = verification.metadata || {};
-        if (metadata.type !== 'bulk_purchase') {
+        // Retrieve purchase session from database
+        if (!session) {
+            session = await BulkPurchaseSession.findOne({ paymentReferenceId });
+        }
+        
+        if (!session) {
+            console.error('No purchase session found for:', paymentReferenceId);
             return res.status(400).json({
                 success: false,
-                error: 'Invalid payment type'
+                error: 'Purchase session not found. Please contact support with your payment reference.'
             });
         }
+        
+        if (session.status === 'completed') {
+            console.log('Session already completed, returning existing codes');
+            // Return existing codes if session was already processed
+            const allCodes = await BulkCode.find({ paymentReferenceId }).select('code isUsed expiresAt');
+            if (allCodes.length > 0) {
+                return res.json({
+                    success: true,
+                    message: 'Codes already generated',
+                    codes: allCodes,
+                    quantity: allCodes.length
+                });
+            }
+        }
 
-        const quantity = parseInt(metadata.quantity);
-        const unitPrice = parseFloat(metadata.unitPrice);
-        const email = metadata.email;
-        const phone = metadata.phone;
+        const quantity = session.quantity;
+        const unitPrice = session.unitPrice;
+        const email = session.email;
+        const phone = session.phone;
+        const currency = session.currency;
+        
+        console.log('Retrieved session data:', { quantity, unitPrice, email, phone, currency });
 
         // Generate unique codes
         const codes = [];
@@ -188,7 +316,6 @@ router.post('/verify-and-generate', async (req, res) => {
                 code,
                 purchaseEmail: email,
                 purchasePhone: phone,
-                quantity: 1, // Each code represents 1 pin
                 unitPrice,
                 totalPaid: unitPrice,
                 paymentReferenceId,
@@ -202,6 +329,14 @@ router.post('/verify-and-generate', async (req, res) => {
             });
         }
 
+        // Mark session as completed
+        session.status = 'completed';
+        await session.save();
+        console.log('Bulk purchase completed, codes generated:', codes.length);
+
+        // Get currency info for display
+        const currencyInfo = getCurrency(currency);
+
         res.json({
             success: true,
             message: `Successfully generated ${quantity} codes`,
@@ -209,7 +344,8 @@ router.post('/verify-and-generate', async (req, res) => {
             quantity,
             unitPrice,
             totalPaid: unitPrice * quantity,
-            expiresAt
+            expiresAt,
+            currency: currencyInfo
         });
 
     } catch (error) {

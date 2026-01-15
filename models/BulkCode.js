@@ -16,11 +16,6 @@ const bulkCodeSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    quantity: {
-        type: Number,
-        required: true,
-        min: 10 // Minimum bulk purchase is 10
-    },
     unitPrice: {
         type: Number,
         required: true // Price per code (₱50 or ₱75 depending on quantity)
@@ -32,7 +27,7 @@ const bulkCodeSchema = new mongoose.Schema({
     paymentReferenceId: {
         type: String,
         required: true,
-        unique: true
+        index: true  // Index for fast queries, but not unique (multiple codes per payment)
     },
     // Usage tracking
     isUsed: {

@@ -45,15 +45,30 @@ async function createXenditPayment(amount, currency, description, metadata = {},
 
         const referenceId = metadata.referenceNumber || `XEN-${Date.now()}`;
 
+        // Store metadata in description (Xendit doesn't have a metadata field)
+        const metadataString = JSON.stringify(metadata);
+        
+        // Append reference ID to success URL (Xendit doesn't auto-append like Stripe)
+        const successUrlWithRef = successUrl.includes('?')
+            ? `${successUrl}&ref=${referenceId}`
+            : `${successUrl}?ref=${referenceId}`;
+
         // Use Invoice API - let Xendit show all available payment methods for that currency
         const invoice = await xendit.Invoice.createInvoice({
             data: {
                 externalId: referenceId,
                 amount: amount,
                 currency: currency,
-                payerEmail: `customer-${referenceId}@pinmyplace.app`,
+                payerEmail: metadata.email || `customer-${referenceId}@pinmyplace.app`,
                 description: description || 'PinMyPlace Location Payment',
-                successRedirectUrl: successUrl
+                successRedirectUrl: successUrlWithRef,
+                // Store metadata as custom field if available
+                items: [{
+                    name: description,
+                    quantity: metadata.quantity || 1,
+                    price: metadata.unitPrice ? metadata.unitPrice : amount, // Use unit price if available
+                    category: metadata.type || 'service'
+                }]
                 // Don't specify paymentMethods - let Xendit show all available options
             }
         });
@@ -64,7 +79,8 @@ async function createXenditPayment(amount, currency, description, metadata = {},
             success: true,
             paymentLink: invoice.invoiceUrl,
             chargeId: invoice.id,
-            referenceNumber: referenceId
+            referenceNumber: referenceId,
+            metadata: metadata  // Return metadata so it can be saved
         };
     } catch (error) {
         console.error('Xendit payment creation error:', error);
@@ -81,7 +97,7 @@ async function createXenditPayment(amount, currency, description, metadata = {},
     }
 }/**
  * Verify Xendit payment status
- * @param {string} chargeId - Xendit invoice ID
+ * @param {string} chargeId - Xendit invoice ID or external reference ID
  */
 async function verifyXenditPayment(chargeId) {
     try {
@@ -92,19 +108,49 @@ async function verifyXenditPayment(chargeId) {
             };
         }
 
-        const invoice = await xendit.Invoice.getInvoiceById({
-            invoiceId: chargeId
-        });
+        let invoice;
+        
+        // Try getting invoice by ID first
+        try {
+            invoice = await xendit.Invoice.getInvoiceById({
+                invoiceId: chargeId
+            });
+        } catch (error) {
+            // If that fails, it might be an external ID, try getting all invoices and filtering
+            // This is less efficient but handles the case where we have the external reference
+            if (chargeId.startsWith('BULK-') || chargeId.startsWith('XEN-')) {
+                // Try to get invoice by external ID
+                const invoices = await xendit.Invoice.getInvoices({
+                    externalId: chargeId,
+                    limit: 1
+                });
+                if (invoices && invoices.length > 0) {
+                    invoice = invoices[0];
+                } else {
+                    throw new Error(`No invoice found with external ID: ${chargeId}`);
+                }
+            } else {
+                throw error;
+            }
+        }
 
         console.log('Xendit invoice verification:', invoice);
+
+        // Extract metadata from items if available
+        const items = invoice.items || [];
+        const metadata = items.length > 0 ? {
+            type: items[0].category || '',
+            quantity: items[0].quantity || 0
+        } : {};
 
         return {
             success: true,
             isPaid: invoice.status === 'PAID' || invoice.status === 'SETTLED',
             status: invoice.status,
-            metadata: {},
+            metadata: metadata,  // Return extracted metadata
             amount: invoice.amount,
-            currency: invoice.currency
+            currency: invoice.currency,
+            externalId: invoice.externalId
         };
     } catch (error) {
         console.error('Xendit verification error:', error.message);

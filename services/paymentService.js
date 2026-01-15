@@ -22,6 +22,7 @@ async function createGCashPayment(amount, description, metadata = {}, successUrl
 
         const attributes = {
             amount: Math.round(amount * 100), // Convert to cents/smallest unit
+            currency: currencyCode, // Set the payment currency
             description: description,
             remarks: metadata.referenceNumber || 'PinMyPlace Payment',
             payment_method_types: ['gcash', 'paymaya', 'grab_pay', 'card'], // Multiple payment options
