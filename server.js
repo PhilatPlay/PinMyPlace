@@ -11,6 +11,7 @@ const paymentRoutes = require('./routes/payment');
 const pinRoutes = require('./routes/pin');
 const currencyRoutes = require('./routes/currency');
 const bulkRoutes = require('./routes/bulk');
+const trialRoutes = require('./routes/trial');
 
 // Initialize Express
 const app = express();
@@ -60,6 +61,7 @@ app.use('/payment', paymentRoutes);
 app.use('/api/pin', pinRoutes);
 app.use('/api/currency', currencyRoutes);
 app.use('/api/bulk', bulkRoutes);
+app.use('/trial', trialRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

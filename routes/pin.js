@@ -7,6 +7,7 @@ const validator = require('validator');
 const rateLimit = require('express-rate-limit');
 const Pin = require('../models/Pin');
 const BulkCode = require('../models/BulkCode');
+const TrialCode = require('../models/TrialCode');
 const { createGCashPayment, verifyPayment, handleWebhook } = require('../services/paymentService');
 const { createStripePayment, verifyStripePayment, handleStripeWebhook } = require('../services/stripeService');
 const { createXenditPayment, verifyXenditPayment, handleXenditWebhook } = require('../services/xenditService');
@@ -612,6 +613,130 @@ router.post('/create-with-code', verificationLimiter, async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to create pin with access code'
+        });
+    }
+});
+
+// Create pin with trial code
+router.post('/create-with-trial', verificationLimiter, async (req, res) => {
+    try {
+        const {
+            trialCode,
+            locationName,
+            customerPhone,
+            address,
+            latitude,
+            longitude,
+            correctedLatitude,
+            correctedLongitude,
+            correctionDistance
+        } = req.body;
+
+        // Validate trial code
+        if (!trialCode) {
+            return res.status(400).json({
+                success: false,
+                error: 'Trial code is required'
+            });
+        }
+
+        // Find and validate the trial code
+        const trial = await TrialCode.findOne({ code: trialCode.toUpperCase() });
+
+        if (!trial) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid trial code'
+            });
+        }
+
+        // Check if trial code is valid
+        const validation = trial.isValid();
+        if (!validation.valid) {
+            return res.status(400).json({
+                success: false,
+                error: validation.reason
+            });
+        }
+
+        // Validate phone number
+        if (!isValidPhone(customerPhone)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Valid phone number is required'
+            });
+        }
+
+        // Validate coordinates
+        if (!isValidCoordinates(latitude, longitude) ||
+            !isValidCoordinates(correctedLatitude, correctedLongitude)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid GPS coordinates'
+            });
+        }
+
+        // Sanitize inputs
+        const sanitizedLocationName = sanitizeInput(locationName);
+        const sanitizedAddress = sanitizeInput(address || '');
+
+        if (sanitizedLocationName.length < 3 || sanitizedLocationName.length > 100) {
+            return res.status(400).json({
+                success: false,
+                error: 'Location name must be between 3 and 100 characters'
+            });
+        }
+
+        // Generate QR code URL
+        const qrUrl = `https://www.google.com/maps?q=${correctedLatitude},${correctedLongitude}`;
+
+        // Create the pin
+        const newPin = new Pin({
+            pinId: generatePinId(),
+            locationName: sanitizedLocationName,
+            customerPhone,
+            address: sanitizedAddress,
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude),
+            correctedLatitude: parseFloat(correctedLatitude),
+            correctedLongitude: parseFloat(correctedLongitude),
+            correctionDistance: correctionDistance || 0,
+            paymentAmount: 0, // Trial pins are free
+            paymentMethod: 'trial',
+            paymentReferenceId: `TRIAL-${trialCode}-${Date.now()}`,
+            paymentStatus: 'code_redeemed',
+            redeemedCode: trialCode.toUpperCase(),
+            redemptionMethod: 'bulk_code', // Reuse existing field
+            qrCode: qrUrl,
+            isActive: true
+        });
+
+        await newPin.save();
+
+        // Increment trial usage
+        await trial.incrementUsage();
+
+        console.log(`✅ Trial pin created with code: ${trialCode} for ${customerPhone}`);
+
+        res.json({
+            success: true,
+            message: 'Pin created successfully with trial code!',
+            pin: {
+                pinId: newPin.pinId,
+                qrCode: newPin.qrCode,
+                locationName: newPin.locationName,
+                address: newPin.address,
+                correctedLatitude: newPin.correctedLatitude,
+                correctedLongitude: newPin.correctedLongitude,
+                createdAt: newPin.createdAt
+            }
+        });
+
+    } catch (error) {
+        console.error('Trial code redemption error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to create pin with trial code'
         });
     }
 });

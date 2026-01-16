@@ -22,6 +22,11 @@ function initializeMap() {
     const setupMap = (lat, lng, useGPS = true) => {
         originalPosition = { lat: lat, lng: lng };
         correctedPosition = { lat: lat, lng: lng };
+        
+        // Update location state for trial pages immediately
+        if (typeof window.updateLocationState === 'function') {
+            window.updateLocationState(lat, lng, lat, lng);
+        }
 
         // Initialize Leaflet map
         const zoomLevel = useGPS ? 18 : 12; // Wider zoom if no GPS
@@ -103,12 +108,24 @@ function initializeMap() {
                 lat: position.lat,
                 lng: position.lng,
             };
+            
+            // Update location state for trial pages
+            if (typeof window.updateLocationState === 'function') {
+                window.updateLocationState(
+                    originalPosition.lat, 
+                    originalPosition.lng, 
+                    correctedPosition.lat, 
+                    correctedPosition.lng
+                );
+            }
             // Don't show coordinates before payment - security measure
         });
 
-        // Show address section and map controls after map loads
-        document.getElementById("addressSection").style.display = "block";
-        document.getElementById("mapControls").style.display = "block";
+        // Show address section and map controls after map loads (if they exist)
+        const addressSection = document.getElementById("addressSection");
+        const mapControls = document.getElementById("mapControls");
+        if (addressSection) addressSection.style.display = "block";
+        if (mapControls) mapControls.style.display = "block";
 
         if (useGPS) {
             showStatus(

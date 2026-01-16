@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ecuador Postal Service - dropLogik Trial</title>
+
+    <!-- External CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link rel="stylesheet" href="/css/styles.css" />
+
+    <!-- External JavaScript Libraries -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+      /* Ecuador-themed colors */
+      :root {
+        --ecuador-yellow: #FFD100;
+        --ecuador-blue: #0039A6;
+        --ecuador-red: #ED1C24;
+      }
+      
+      .header {
+        background: linear-gradient(135deg, var(--ecuador-yellow) 0%, var(--ecuador-blue) 100%) !important;
+      }
+      
+      .btn-primary {
+        background: var(--ecuador-blue) !important;
+      }
+      
+      .btn-primary:hover {
+        background: var(--ecuador-red) !important;
+      }
+      
+      .trial-banner {
+        background: var(--ecuador-yellow);
+        color: var(--ecuador-blue);
+        padding: 20px;
+        text-align: center;
+        font-weight: bold;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+      
+      .trial-code-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border-left: 4px solid var(--ecuador-blue);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <h1>📍 dropLogik</h1>
+        <h2 style="margin: 10px 0;">Ecuador Postal Service Trial</h2>
+        <p>
+          Digital Addressing for Reliable Delivery -- Create scannable locations for areas without formal addresses.
+        </p>
+      </div>
+
+      <!-- Trial Banner -->
+      <div class="trial-banner">
+        🇪🇨 Exclusive Trial for Ecuador Postal Service 🇪🇨
+      </div>
+
+      <!-- Trial Code Entry Section -->
+      <div id="trialCodeSection" class="trial-code-section">
+        <h3 style="margin-top: 0;">Enter Your Trial Access Code</h3>
+        <p style="color: #666; font-size: 14px;">Please enter the access code provided to you by dropLogik</p>
+        
+        <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+          <input 
+            type="text" 
+            id="trialCodeInput" 
+            placeholder="ECUADOR-TRIAL-XXXX"
+            style="flex: 1; min-width: 250px; padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 16px; text-transform: uppercase; width: 100%; box-sizing: border-box;"
+          />
+          <button 
+            onclick="validateTrialCode()" 
+            class="btn-primary"
+            style="padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: bold; white-space: nowrap;"
+          >
+            Validate Code
+          </button>
+        </div>
+        
+        <div id="trialCodeMessage" style="margin-top: 15px;"></div>
+      </div>
+
+      <!-- Main Pin Creation Section (Hidden until code validated) -->
+      <div id="mainPinSection" style="display: none;">
+        
+        <!-- Trial Info -->
+        <div class="card" style="background: #e7f3ff; padding: 15px; margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">✅</span>
+            <div>
+              <strong>Trial Code Active</strong>
+              <div id="trialInfo" style="font-size: 13px; color: #666; margin-top: 5px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 1: Location Details -->
+        <div class="card">
+          <h2>Step 1: Enter Location Details</h2>
+          <form id="locationForm">
+            <input
+              type="text"
+              id="locationName"
+              placeholder="Location Name (e.g., Maria's House)"
+              required
+            />
+            <input
+              type="tel"
+              id="customerPhone"
+              placeholder="Phone Number"
+              required
+            />
+            <textarea
+              id="address"
+              placeholder="Address or Landmark (Optional)"
+              rows="2"
+            ></textarea>
+          </form>
+        </div>
+
+        <!-- Step 2: GPS Coordinates -->
+        <div class="card">
+          <h2>Step 2: Set Your Location</h2>
+          <p id="locationStatus" style="margin-top: 10px; padding: 10px; background: #e7f3ff; border-radius: 6px;">
+            📍 Map will load automatically. Drag the green marker to your exact location.
+          </p>
+        </div>
+
+        <!-- Map Preview -->
+        <div class="card">
+          <h2>Location Preview</h2>
+          <div id="map"></div>
+        </div>
+
+        <!-- Step 3: Create Pin -->
+        <div class="card">
+          <h2>Step 3: Create Your Pin</h2>
+          <button
+            id="createPinBtn"
+            class="btn-primary"
+            onclick="createPin()"
+            disabled
+          >
+            Create Pin (Trial Access)
+          </button>
+        </div>
+
+        <!-- Result Section -->
+        <div id="resultSection" class="card" style="display: none">
+          <h2>Your Location Pin</h2>
+          <div id="pinResult"></div>
+          <div id="qrCodeContainer"></div>
+          <div class="button-group">
+            <button class="btn-secondary" onclick="downloadQR()">
+              Download QR Code
+            </button>
+            <button class="btn-secondary" onclick="sharePin()">
+              Share Pin
+            </button>
+          </div>
+          <button class="btn-secondary" onclick="resetForm()">
+            Create Another Pin
+          </button>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>&copy; 2026 dropLogik. All rights reserved.</p>
+        <p>
+          <a href="/privacy-policy.html">Privacy Policy</a> |
+          <a href="/terms-of-service.html">Terms of Service</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- Internal JavaScript -->
+    <script src="/js/utils.js"></script>
+    <script src="/js/location.js"></script>
+    <script src="/js/map.js"></script>
+    <script>
+      // Trial-specific variables
+      let validatedTrialCode = null;
+      let trialConfig = null;
+
+      // Load trial configuration
+      async function loadTrialConfig() {
+        try {
+          const response = await fetch('/trial/api/ecuador-trial/config');
+          if (response.ok) {
+            trialConfig = await response.json();
+          }
+        } catch (error) {
+          console.error('Error loading trial config:', error);
+        }
+      }
+
+      // Validate trial code
+      async function validateTrialCode() {
+        const codeInput = document.getElementById('trialCodeInput');
+        const code = codeInput.value.trim();
+        const messageDiv = document.getElementById('trialCodeMessage');
+
+        if (!code) {
+          messageDiv.innerHTML = '<p style="color: #ED1C24;">Please enter a trial code</p>';
+          return;
+        }
+
+        try {
+          const response = await fetch('/trial/api/validate-code', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ code })
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            validatedTrialCode = code.toUpperCase();
+            messageDiv.innerHTML = `<p style="color: #28a745;">✅ Code validated successfully!</p>`;
+            
+            // Show trial info
+            let infoText = `Trial: ${data.trialName}`;
+            if (data.remainingUses) {
+              infoText += ` | Remaining uses: ${data.remainingUses}`;
+            }
+            if (data.expiresAt) {
+              const expDate = new Date(data.expiresAt).toLocaleDateString();
+              infoText += ` | Expires: ${expDate}`;
+            }
+            document.getElementById('trialInfo').textContent = infoText;
+            
+            // Hide code section and show main section
+            setTimeout(() => {
+              document.getElementById('trialCodeSection').style.display = 'none';
+              document.getElementById('mainPinSection').style.display = 'block';
+              initializeMap();
+            }, 1000);
+          } else {
+            messageDiv.innerHTML = `<p style="color: #ED1C24;">❌ ${data.error}</p>`;
+          }
+        } catch (error) {
+          console.error('Error validating code:', error);
+          messageDiv.innerHTML = '<p style="color: #ED1C24;">Error validating code. Please try again.</p>';
+        }
+      }
+
+      // Override createPin function to use trial code
+      async function createPin() {
+        if (!validatedTrialCode) {
+          alert('Please validate your trial code first');
+          return;
+        }
+
+        const locationName = document.getElementById('locationName').value;
+        const customerPhone = document.getElementById('customerPhone').value;
+        const address = document.getElementById('address').value;
+
+        if (!locationName || !customerPhone) {
+          alert('Please fill in all required fields');
+          return;
+        }
+
+        if (!window.currentLocation || !window.correctedLocation) {
+          alert('Please get GPS location first');
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/pin/create-with-trial', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              locationName,
+              customerPhone,
+              address,
+              latitude: window.currentLocation.lat,
+              longitude: window.currentLocation.lng,
+              correctedLatitude: window.correctedLocation.lat,
+              correctedLongitude: window.correctedLocation.lng,
+              correctionDistance: window.correctionDistance || 0,
+              trialCode: validatedTrialCode
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            displayPinResult(data.pin);
+          } else {
+            alert('Error creating pin: ' + (data.error || 'Unknown error'));
+          }
+        } catch (error) {
+          console.error('Error creating pin:', error);
+          alert('Error creating pin. Please try again.');
+        }
+      }
+
+      // Display pin result
+      function displayPinResult(pin) {
+        const resultSection = document.getElementById('resultSection');
+        const pinResult = document.getElementById('pinResult');
+
+        pinResult.innerHTML = `
+          <div class="pin-details">
+            <p><strong>Pin ID:</strong> ${pin.pinId}</p>
+            <p><strong>Location:</strong> ${pin.locationName}</p>
+            <p><strong>Phone:</strong> ${pin.customerPhone}</p>
+            <p><strong>Coordinates:</strong> ${pin.correctedLatitude.toFixed(6)}, ${pin.correctedLongitude.toFixed(6)}</p>
+            ${pin.address ? `<p><strong>Address:</strong> ${pin.address}</p>` : ''}
+          </div>
+        `;
+
+        // Generate QR Code
+        const qrContainer = document.getElementById('qrCodeContainer');
+        qrContainer.innerHTML = '<div id="qrcode"></div>';
+        new QRCode(document.getElementById('qrcode'), {
+          text: pin.qrCode,
+          width: 256,
+          height: 256,
+        });
+
+        resultSection.style.display = 'block';
+        resultSection.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      // Download QR code
+      function downloadQR() {
+        const qrElement = document.getElementById('qrcode');
+        html2canvas(qrElement).then(canvas => {
+          const link = document.createElement('a');
+          link.download = 'location-pin-qr.png';
+          link.href = canvas.toDataURL();
+          link.click();
+        });
+      }
+
+      // Share pin
+      function sharePin() {
+        const pinId = document.querySelector('.pin-details p:first-child').textContent.split(': ')[1];
+        const shareText = `My location pin: ${window.location.origin}/pin/${pinId}`;
+        
+        if (navigator.share) {
+          navigator.share({
+            title: 'My Location Pin',
+            text: shareText
+          });
+        } else {
+          navigator.clipboard.writeText(shareText);
+          alert('Link copied to clipboard!');
+        }
+      }
+
+      // Reset form
+      function resetForm() {
+        document.getElementById('locationForm').reset();
+        document.getElementById('resultSection').style.display = 'none';
+        document.getElementById('coordinatesDisplay').style.display = 'none';
+        document.getElementById('createPinBtn').disabled = true;
+        window.currentLocation = null;
+        window.correctedLocation = null;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // Track location state and enable create pin button
+      function updateLocationState(rawLat, rawLng, correctedLat, correctedLng) {
+        window.currentLocation = { lat: rawLat, lng: rawLng };
+        window.correctedLocation = { lat: correctedLat, lng: correctedLng };
+        
+        // Calculate correction distance
+        const R = 6371e3; // Earth radius in meters
+        const φ1 = rawLat * Math.PI / 180;
+        const φ2 = correctedLat * Math.PI / 180;
+        const Δφ = (correctedLat - rawLat) * Math.PI / 180;
+        const Δλ = (correctedLng - rawLng) * Math.PI / 180;
+        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        window.correctionDistance = R * c;
+        
+        // Enable create pin button
+        const createBtn = document.getElementById('createPinBtn');
+        if (createBtn) {
+          createBtn.disabled = false;
+          document.getElementById('locationStatus').innerHTML = 
+            '<strong style="color: #28a745;">✅ Location set! You can now create your pin.</strong>';
+        }
+      }
+
+      // Override map.js setupMap to track location
+      const originalSetupMap = window.setupMap;
+      window.setupMap = function(lat, lng, useGPS) {
+        // Call original setupMap if it exists
+        if (typeof originalSetupMap === 'function') {
+          originalSetupMap(lat, lng, useGPS);
+        }
+        
+        // Track initial location
+        updateLocationState(lat, lng, lat, lng);
+      };
+
+      // Initialize on load
+      loadTrialConfig();
+    </script>
+  </body>
+</html>
