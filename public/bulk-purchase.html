@@ -18,12 +18,12 @@
             <h3>💰 Wholesale Pricing</h3>
             <div style="margin: 15px 0;">
                 <p style="font-size: 18px; margin: 10px 0;">
-                    <strong>10+ codes:</strong> <span id="bulkPrice">₱50</span> per code 
+                    <strong>10+ codes:</strong> <span id="bulkPrice">₱75</span> per code 
                     <span style="color: #28a745;">(50% discount)</span>
                 </p>
             </div>
             <p style="margin-top: 15px; color: #666; font-size: 14px;">
-                Retail price: <span id="retailPrice">₱100</span> per pin - Resell and keep the profit!
+                Retail price: <span id="retailPrice">₱150</span> per pin - Resell and keep the profit!
             </p>
         </div>
 
@@ -40,9 +40,9 @@
             <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px;">
                 <strong>📊 Example Profit:</strong>
                 <ul style="margin: 10px 0; padding-left: 20px;">
-                    <li>Buy 10 codes at <span id="exampleBuyPrice">₱50</span> each = <span id="exampleBuyCost">₱500</span></li>
-                    <li>Sell 10 codes at <span id="exampleSellPrice">₱90</span> each = <span id="exampleSellRevenue">₱900</span></li>
-                    <li><strong style="color: #28a745;">Your profit = <span id="exampleProfit">₱400</span></strong></li>
+                    <li>Buy 10 codes at <span id="exampleBuyPrice">₱75</span> each = <span id="exampleBuyCost">₱750</span></li>
+                    <li>Sell 10 codes at <span id="exampleSellPrice">₱150</span> each = <span id="exampleSellRevenue">₱1500</span></li>
+                    <li><strong style="color: #28a745;">Your profit = <span id="exampleProfit">₱750</span></strong></li>
                 </ul>
             </div>
         </div>
@@ -166,8 +166,15 @@
             // Apply 50% discount for 10+ codes
             const discountRate = 0.50; // 50% discount for all bulk purchases
             
-            const unitPrice = Math.round(basePrice * discountRate);
-            const total = quantity * unitPrice;
+            // For currencies with decimals (USD, SGD), preserve decimal precision
+            // For whole number currencies (PHP, MYR, etc), round to integer
+            const hasDecimals = basePrice < 10 || basePrice % 1 !== 0;
+            const unitPrice = hasDecimals 
+                ? parseFloat((basePrice * discountRate).toFixed(2))
+                : Math.round(basePrice * discountRate);
+            const total = hasDecimals 
+                ? parseFloat((quantity * unitPrice).toFixed(2))
+                : quantity * unitPrice;
 
             // Update display with selected currency
             document.getElementById('displayQuantity').textContent = quantity;
@@ -175,14 +182,16 @@
             document.getElementById('displayTotal').textContent = `${currencyInfo.symbol}${total.toLocaleString()}`;
             
             // Update wholesale pricing display
-            const bulkPrice = Math.round(basePrice * 0.50);
+            const bulkPrice = hasDecimals 
+                ? parseFloat((basePrice * 0.50).toFixed(2))
+                : Math.round(basePrice * 0.50);
             document.getElementById('bulkPrice').textContent = `${currencyInfo.symbol}${bulkPrice.toLocaleString()}`;
             document.getElementById('retailPrice').textContent = `${currencyInfo.symbol}${basePrice.toLocaleString()}`;
             
             // Update example profit calculation (using 10 codes as example)
             const exampleQuantity = 10;
             const exampleBuyPrice = bulkPrice;
-            const exampleSellPrice = Math.round(basePrice * 0.90); // Sell at 90% of retail
+            const exampleSellPrice = basePrice; // Sell at full retail price for maximum profit
             const buyCost = exampleQuantity * exampleBuyPrice;
             const sellRevenue = exampleQuantity * exampleSellPrice;
             const profit = sellRevenue - buyCost;

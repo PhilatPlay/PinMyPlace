@@ -32,27 +32,48 @@ function initializeMap() {
         const zoomLevel = useGPS ? 18 : 12; // Wider zoom if no GPS
         map = L.map("map").setView([lat, lng], zoomLevel);
 
-        // Add satellite/imagery layer as default
+        // Add OpenStreetMap as default
+        const openStreetMap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "© OpenStreetMap contributors",
+            maxZoom: 19,
+        }).addTo(map);
+
+        // Add satellite/imagery layer as alternative
         const satellite = L.tileLayer(
             "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
             {
                 attribution:
                     "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
             }
-        ).addTo(map);
+        );
 
-        // Add OpenStreetMap as alternative
-        const openStreetMap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution: "© OpenStreetMap contributors",
-            maxZoom: 19,
-        });
-
-        // Layer control to switch between map types
-        const baseMaps = {
-            Satellite: satellite,
-            OpenStreetMap: openStreetMap,
+        // Create custom toggle button
+        let isSatellite = false;
+        const toggleControl = L.control({ position: 'topright' });
+        
+        toggleControl.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'leaflet-control');
+            div.innerHTML = '<button class="map-toggle-btn" style="background: white; color: #333; border: none; border-radius: 4px; padding: 12px 16px; cursor: pointer; font-size: 15px; font-weight: 600; box-shadow: 0 1px 5px rgba(0,0,0,0.2); min-width: 110px;">Satellite</button>';
+            
+            div.onclick = function(e) {
+                e.stopPropagation();
+                isSatellite = !isSatellite;
+                
+                if (isSatellite) {
+                    map.removeLayer(openStreetMap);
+                    map.addLayer(satellite);
+                    div.querySelector('.map-toggle-btn').innerHTML = 'Map';
+                } else {
+                    map.removeLayer(satellite);
+                    map.addLayer(openStreetMap);
+                    div.querySelector('.map-toggle-btn').innerHTML = 'Satellite';
+                }
+            };
+            
+            return div;
         };
-        L.control.layers(baseMaps).addTo(map);
+        
+        toggleControl.addTo(map);
 
         // Create custom icons
         const redIcon = L.icon({

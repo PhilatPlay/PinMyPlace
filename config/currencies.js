@@ -1,15 +1,15 @@
 // Currency configuration for Southeast Asia
-// Prices are equivalent to ~$2 USD base price
+// Prices are equivalent to ~$3 USD base price
 // Exchange rates updated as of Nov 2025
 
-const BASE_PRICE_USD = 2.00;
+const BASE_PRICE_USD = 3.00;
 
 const CURRENCIES = {
     PHP: {
         code: 'PHP',
         symbol: '₱',
         name: 'Philippine Peso',
-        price: 100,
+        price: 150,
         country: 'Philippines',
         flag: '🇵🇭',
         exchangeRate: 50  // 1 USD = 50 PHP
@@ -18,7 +18,7 @@ const CURRENCIES = {
         code: 'MYR',
         symbol: 'RM',
         name: 'Malaysian Ringgit',
-        price: 10,
+        price: 15,
         country: 'Malaysia',
         flag: '🇲🇾',
         exchangeRate: 5  // 1 USD = 5 MYR
@@ -27,7 +27,7 @@ const CURRENCIES = {
         code: 'SGD',
         symbol: 'S$',
         name: 'Singapore Dollar',
-        price: 3,
+        price: 4.5,
         country: 'Singapore',
         flag: '🇸🇬',
         exchangeRate: 1.5  // 1 USD = 1.5 SGD
@@ -36,7 +36,7 @@ const CURRENCIES = {
         code: 'THB',
         symbol: '฿',
         name: 'Thai Baht',
-        price: 70,
+        price: 105,
         country: 'Thailand',
         flag: '🇹🇭',
         exchangeRate: 35  // 1 USD = 35 THB
@@ -45,7 +45,7 @@ const CURRENCIES = {
         code: 'IDR',
         symbol: 'Rp',
         name: 'Indonesian Rupiah',
-        price: 32000,
+        price: 48000,
         country: 'Indonesia',
         flag: '🇮🇩',
         exchangeRate: 16000  // 1 USD = 16,000 IDR
@@ -54,7 +54,7 @@ const CURRENCIES = {
         code: 'VND',
         symbol: '₫',
         name: 'Vietnamese Dong',
-        price: 50000,
+        price: 75000,
         country: 'Vietnam',
         flag: '🇻🇳',
         exchangeRate: 25000  // 1 USD = 25,000 VND
@@ -63,7 +63,7 @@ const CURRENCIES = {
         code: 'USD',
         symbol: '$',
         name: 'US Dollar',
-        price: 2,
+        price: 3,
         country: 'International',
         flag: '🌏',
         exchangeRate: 1  // Base currency
@@ -72,7 +72,7 @@ const CURRENCIES = {
         code: 'HKD',
         symbol: 'HK$',
         name: 'Hong Kong Dollar',
-        price: 16,
+        price: 24,
         country: 'Hong Kong',
         flag: '🇭🇰',
         exchangeRate: 8  // 1 USD = 8 HKD

@@ -2,14 +2,14 @@
 
 // Currency definitions (matches server-side config)
 const CURRENCIES = {
-    PHP: { code: 'PHP', symbol: '₱', price: 100, name: 'Philippine Peso', country: 'Philippines', flag: '🇵🇭' },
-    MYR: { code: 'MYR', symbol: 'RM', price: 10, name: 'Malaysian Ringgit', country: 'Malaysia', flag: '🇲🇾' },
-    SGD: { code: 'SGD', symbol: 'S$', price: 3, name: 'Singapore Dollar', country: 'Singapore', flag: '🇸🇬' },
-    THB: { code: 'THB', symbol: '฿', price: 70, name: 'Thai Baht', country: 'Thailand', flag: '🇹🇭' },
-    IDR: { code: 'IDR', symbol: 'Rp', price: 32000, name: 'Indonesian Rupiah', country: 'Indonesia', flag: '🇮🇩' },
-    VND: { code: 'VND', symbol: '₫', price: 50000, name: 'Vietnamese Dong', country: 'Vietnam', flag: '🇻🇳' },
-    USD: { code: 'USD', symbol: '$', price: 2, name: 'US Dollar', country: 'International', flag: '🌏' },
-    HKD: { code: 'HKD', symbol: 'HK$', price: 16, name: 'Hong Kong Dollar', country: 'Hong Kong', flag: '🇭🇰' }
+    PHP: { code: 'PHP', symbol: '₱', price: 150, name: 'Philippine Peso', country: 'Philippines', flag: '🇵🇭' },
+    MYR: { code: 'MYR', symbol: 'RM', price: 15, name: 'Malaysian Ringgit', country: 'Malaysia', flag: '🇲🇾' },
+    SGD: { code: 'SGD', symbol: 'S$', price: 4.5, name: 'Singapore Dollar', country: 'Singapore', flag: '🇸🇬' },
+    THB: { code: 'THB', symbol: '฿', price: 105, name: 'Thai Baht', country: 'Thailand', flag: '🇹🇭' },
+    IDR: { code: 'IDR', symbol: 'Rp', price: 48000, name: 'Indonesian Rupiah', country: 'Indonesia', flag: '🇮🇩' },
+    VND: { code: 'VND', symbol: '₫', price: 75000, name: 'Vietnamese Dong', country: 'Vietnam', flag: '🇻🇳' },
+    USD: { code: 'USD', symbol: '$', price: 3, name: 'US Dollar', country: 'International', flag: '🌏' },
+    HKD: { code: 'HKD', symbol: 'HK$', price: 24, name: 'Hong Kong Dollar', country: 'Hong Kong', flag: '🇭🇰' }
 };
 
 // Get saved currency preference
@@ -128,7 +128,7 @@ async function detectUserCurrency() {
     }
 
     // Default to PHP if detection fails
-    return { code: 'PHP', symbol: '₱', price: 100 };
+    return { code: 'PHP', symbol: '₱', price: 150 };
 }
 
 // Show status message

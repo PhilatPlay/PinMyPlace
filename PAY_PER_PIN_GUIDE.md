@@ -3,13 +3,13 @@
 ## 🎯 Business Model Overview
 
 PinMyPlace operates on a dual-revenue model:
-1. **Direct Sales** - Individual users pay ₱100 per pin
+1. **Direct Sales** - Individual users pay ₱150 per pin
 2. **Bulk Sales** - Resellers buy codes in bulk at wholesale prices and resell for profit
 
 ### Key Features:
 
-- ✅ **Pay-per-pin**: ₱100 per pin for direct customers
-- ✅ **Bulk Purchase**: Buy 10+ codes at ₱50-75 each (wholesale)
+- ✅ **Pay-per-pin**: ₱150 per pin for direct customers
+- ✅ **Bulk Purchase**: Buy 10+ codes at ₱75 each (wholesale)
 - ✅ **Reseller Model**: Similar to prepaid load distribution
 - ✅ **No Login Required**: Customers get instant QR code
 - ✅ **No Commission Hassles**: Resellers keep 100% of their markup
@@ -20,15 +20,14 @@ PinMyPlace operates on a dual-revenue model:
 
 ### For Individual Customers:
 
-- **₱100 per pin** - One-time payment via GCash/Maya/GrabPay/Card
+- **₱150 per pin** - One-time payment via GCash/Maya/GrabPay/Card
 - **90-day validity** - Pin expires after 3 months
-- **Renewal**: ₱100 to extend for another 90 days
+- **Renewal**: ₱150 to extend for another 90 days
 - **No account needed** - Just pay and get QR code
 
 ### For Bulk Buyers (Resellers):
 
-- **Tier 1 (10-49 codes):** ₱75 per code (25% discount)
-- **Tier 2 (50+ codes):** ₱50 per code (50% discount)
+- **All bulk purchases (10+ codes):** ₱75 per code (50% discount)
 - **Code validity:** 180 days from purchase
 - **Minimum purchase:** 10 codes
 - **One-time use:** Each code creates one pin only
@@ -41,12 +40,12 @@ Inspired by how prepaid load is sold in the Philippines - resellers operate like
 
 ### How It Works:
 
-1. **Reseller buys bulk codes** (e.g., 50 codes at ₱50 each = ₱2,500)
+1. **Reseller buys bulk codes** (e.g., 50 codes at ₱75 each = ₱3,750)
 2. **Receives access codes** instantly (downloadable text file)
 3. **Customer asks for a pin** 
-4. **Reseller sells code** for ₱80-100 (their choice)
+4. **Reseller sells code** for ₱120-150 (their choice)
 5. **Customer redeems code** on website to create pin
-6. **Reseller keeps the profit** (₱30-50 per code)
+6. **Reseller keeps the profit** (₱45-75 per code)
 
 ### Reseller Benefits:
 
@@ -61,18 +60,18 @@ Inspired by how prepaid load is sold in the Philippines - resellers operate like
 
 **Scenario 1: Buy 10 codes at ₱75 each**
 - Cost: ₱750
-- Sell at ₱95 each: ₱950
-- **Profit: ₱200** (27% margin)
+- Sell at ₱140 each: ₱1,400
+- **Profit: ₱650** (87% margin)
 
-**Scenario 2: Buy 50 codes at ₱50 each**
-- Cost: ₱2,500
-- Sell at ₱90 each: ₱4,500
-- **Profit: ₱2,000** (80% margin)
+**Scenario 2: Buy 50 codes at ₱75 each**
+- Cost: ₱3,750
+- Sell at ₱135 each: ₱6,750
+- **Profit: ₱3,000** (80% margin)
 
-**Scenario 3: Buy 100 codes at ₱50 each**
-- Cost: ₱5,000
-- Sell at ₱85 each: ₱8,500
-- **Profit: ₱3,500** (70% margin)
+**Scenario 3: Buy 100 codes at ₱75 each**
+- Cost: ₱7,500
+- Sell at ₱130 each: ₱13,000
+- **Profit: ₱5,500** (73% margin)
 
 ---
 
@@ -82,11 +81,11 @@ Inspired by how prepaid load is sold in the Philippines - resellers operate like
 
 #### Pin Routes (`/api/pin`)
 
-- `POST /initiate-payment` - Create PayMongo payment link for ₱100
+- `POST /initiate-payment` - Create PayMongo payment link for ₱150
 - `POST /create-with-payment` - Verify payment and create pin
 - `POST /create-with-code` - Redeem bulk access code and create pin
 - `GET /:pinId` - Public lookup of pin details
-- `POST /renew/:pinId` - Renew expired pin for ₱100
+- `POST /renew/:pinId` - Renew expired pin for ₱150
 
 #### Bulk Routes (`/api/bulk`)
 
@@ -120,7 +119,7 @@ Inspired by how prepaid load is sold in the Philippines - resellers operate like
   code: String,              // DL-XXXXXXXX (unique)
   purchaseEmail: String,
   purchasePhone: String,
-  unitPrice: Number,         // ₱50 or ₱75 depending on quantity
+  unitPrice: Number,         // ₱75 (50% discount from ₱150)
   totalPaid: Number,
   paymentReferenceId: String,
   isUsed: Boolean,           // false until redeemed
@@ -163,7 +162,7 @@ Inspired by how prepaid load is sold in the Philippines - resellers operate like
 3. Enable GPS location
 4. Adjust pin on map to exact delivery spot
 5. Enter location name
-6. Click "Pay ₱100 & Get QR Code"
+6. Click "Pay ₱150 & Get QR Code"
 7. Upload GCash payment screenshot
 8. Enter phone number
 9. Get QR code instantly
@@ -175,7 +174,7 @@ Inspired by how prepaid load is sold in the Philippines - resellers operate like
 2. View dashboard (today's sales, month stats, commission balance)
 3. Click "Create Pin for Customer"
 4. Help customer set location on map
-5. Collect ₱100 cash from customer
+5. Collect ₱150 cash from customer
 6. Upload payment proof (can use agent's GCash)
 7. Customer gets QR code
 8. Agent earns ₱50 commission automatically
@@ -295,7 +294,7 @@ Requirements:
 
 ### For Customers:
 
-- "₱100 solves your delivery address problem forever!"
+- "₱150 solves your delivery address problem forever!"
 - "No more wrong deliveries - pin your exact location"
 - "Delivery riders find you in 1 click"
 
