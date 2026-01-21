@@ -59,8 +59,9 @@
   <body>
     <div class="container">
       <!-- Header -->
-      <div class="header">
-        <h1>📍 dropLogik</h1>
+      <div class="header" style="position: relative;">
+        <img src="/pics/ecuador-flag.png" alt="Ecuador Flag" style="position: absolute; top: 10px; left: 10px; width: 60px; height: auto; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+        <img src="/pics/dropLogik-logo2.png" alt="dropLogik Logo" style="max-width: 188px; height: auto; padding-top: 15px; margin: 0 auto 10px; display: block; background: transparent;">
         <h2 style="margin: 10px 0;">Ecuador Postal Service Trial</h2>
         <p>
           Digital Addressing for Reliable Delivery -- Create scannable locations for areas without formal addresses.
@@ -119,12 +120,14 @@
               id="locationName"
               placeholder="Location Name (e.g., Maria's House)"
               required
+              style="margin-bottom: 15px;"
             />
             <input
               type="tel"
               id="customerPhone"
               placeholder="Phone Number"
               required
+              style="margin-bottom: 15px;"
             />
             <textarea
               id="address"
