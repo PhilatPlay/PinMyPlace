@@ -51,7 +51,20 @@
   <body>
     <div class="container">
       <div class="legal-content">
-        <a href="/" class="back-link">← Back to dropLogik</a>
+        <a href="#" id="backLink" class="back-link">← Back to dropLogik</a>
+        <script>
+          // Check URL parameter to determine back link
+          (function() {
+            const backLink = document.getElementById('backLink');
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('from') === 'trial') {
+              backLink.href = '/ecuador-trial.html';
+              backLink.textContent = '← Back to Ecuador Trial';
+            } else {
+              backLink.href = '/';
+            }
+          })();
+        </script>
 
         <h1>Privacy Policy</h1>
         <p class="last-updated">Last Updated: December 11, 2025</p>

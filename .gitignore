@@ -4,3 +4,8 @@ node_modules/
 .DS_Store
 uploads/payment-proofs/*
 !uploads/payment-proofs/.gitkeep
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml

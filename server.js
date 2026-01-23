@@ -17,16 +17,16 @@ const trialRoutes = require('./routes/trial');
 const app = express();
 
 // Security middleware
-// Force HTTPS in production
-if (process.env.NODE_ENV === 'production') {
-    app.use((req, res, next) => {
-        if (req.header('x-forwarded-proto') !== 'https') {
-            res.redirect(`https://${req.header('host')}${req.url}`);
-        } else {
-            next();
-        }
-    });
-}
+// Force HTTPS in production (disabled for AWS EB - load balancer handles it)
+// if (process.env.NODE_ENV === 'production') {
+//     app.use((req, res, next) => {
+//         if (req.header('x-forwarded-proto') !== 'https') {
+//             res.redirect(`https://${req.header('host')}${req.url}`);
+//         } else {
+//             next();
+//         }
+//     });
+// }
 
 // Security headers
 app.use((req, res, next) => {
