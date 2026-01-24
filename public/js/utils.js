@@ -83,7 +83,7 @@ async function detectUserCurrency() {
             // Update header price
             const headerPrice = document.getElementById('headerPrice');
             if (headerPrice) {
-                headerPrice.textContent = `Gigital Addressing for Reliable Delivery -- create a scannable location for areas without formal addresses`;
+                headerPrice.textContent = `Digital Addressing for Reliable Delivery -- create a scannable location for areas without formal addresses`;
             }
 
             // Update all dynamic price elements
