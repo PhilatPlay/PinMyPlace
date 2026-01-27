@@ -282,8 +282,18 @@ function displayQRCode(result) {
     const qrSection = document.getElementById("qrSection");
     const qrDetails = document.getElementById("qrDetails");
     const shareLink = document.getElementById("shareLink");
+    const mainSection = document.getElementById("mainPinSection");
+    const dashboardSection = document.getElementById("userDashboard");
 
-    // Set details
+        // Ensure main pin section is visible
+        if (mainSection) {
+                mainSection.style.display = "block";
+        }
+        if (dashboardSection) {
+                dashboardSection.style.display = "none";
+        }
+
+        // Set details
     qrDetails.innerHTML = `
     <h4>${result.pin.locationName}</h4>
     <p style="color: #666; margin: 5px 0;">${result.pin.address || 'No address specified'}</p>
@@ -324,7 +334,7 @@ function shareQR() {
 
     if (navigator.share) {
         navigator.share({
-            title: 'My PinMyPlace Location',
+            title: 'My dropLogik Location',
             text: text,
             url: shareLink
         }).catch(err => console.log('Share cancelled'));
@@ -351,10 +361,29 @@ function createAnotherPin() {
     document.getElementById("proofPreview").style.display = "none";
 
     // Hide sections
-    document.getElementById("paymentSection").style.display = "none";
-    document.getElementById("qrSection").style.display = "none";
-    document.getElementById("addressSection").style.display = "none";
-    document.getElementById("mapControls").style.display = "none";
+    const paymentSection = document.getElementById("paymentSection");
+    const qrSection = document.getElementById("qrSection");
+    const codeQrSection = document.getElementById("codeQrSection");
+    const addressSection = document.getElementById("addressSection");
+    const mapControls = document.getElementById("mapControls");
+
+    if (paymentSection) paymentSection.style.display = "none";
+    if (qrSection) qrSection.style.display = "none";
+    if (codeQrSection) codeQrSection.style.display = "none";
+    if (addressSection) addressSection.style.display = "none";
+    if (mapControls) mapControls.style.display = "none";
+
+    // Ensure main pin section is visible
+    const mainSection = document.getElementById("mainPinSection");
+    if (mainSection) {
+        mainSection.style.display = "block";
+        const mainCards = document.querySelectorAll('#mainPinSection > .card');
+        mainCards.forEach(card => {
+            if (!card.id || card.id !== 'qrSection') {
+                card.style.display = "block";
+            }
+        });
+    }
 
     // Clear map
     if (map) {

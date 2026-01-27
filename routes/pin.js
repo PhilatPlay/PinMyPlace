@@ -236,6 +236,10 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
             });
         }
 
+        const storedPaymentReferenceId = paymentGateway === 'xendit'
+            ? (payment.referenceNumber || payment.chargeId)
+            : (payment.sessionId || payment.referenceNumber || payment.chargeId);
+
         // Store pin data temporarily in a "pending" pin record
         // This will be updated to "verified" after payment confirmation
         const pendingPin = new Pin({
@@ -249,8 +253,8 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
             correctedLongitude: parseFloat(correctedLongitude),
             paymentAmount: paymentAmount,
             paymentMethod: currencyInfo.code,
-            // Store chargeId for Xendit, sessionId for Stripe, referenceNumber for PayMongo
-            paymentReferenceId: payment.chargeId || payment.sessionId || payment.referenceNumber,
+            // Store external reference for Xendit, sessionId for Stripe, referenceNumber for PayMongo
+            paymentReferenceId: storedPaymentReferenceId,
             paymentStatus: 'pending',
             qrCode: generateQRCode()
         });
@@ -260,8 +264,8 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
         res.json({
             success: true,
             paymentLink: payment.paymentLink,
-            // Return chargeId for Xendit, sessionId for Stripe, referenceNumber for PayMongo
-            referenceNumber: payment.chargeId || payment.sessionId || payment.referenceNumber,
+            // Return external reference for Xendit, sessionId for Stripe, referenceNumber for PayMongo
+            referenceNumber: storedPaymentReferenceId,
             amount: paymentAmount,
             currency: currencyInfo.code,
             currencySymbol: currencyInfo.symbol,
@@ -297,7 +301,16 @@ router.post('/create-with-payment', verificationLimiter, async (req, res) => {
         }
 
         // Find the pending pin first
-        const pin = await Pin.findOne({ paymentReferenceId });
+        let pin = await Pin.findOne({ paymentReferenceId });
+        let xenditFallbackVerification = null;
+
+        // Backward-compatible lookup for Xendit external IDs (e.g., PIN-xxxx)
+        if (!pin && (paymentReferenceId.startsWith('PIN-') || paymentReferenceId.startsWith('XEN-') || paymentReferenceId.startsWith('BULK-'))) {
+            xenditFallbackVerification = await verifyXenditPayment(paymentReferenceId);
+            if (xenditFallbackVerification.success && xenditFallbackVerification.invoiceId) {
+                pin = await Pin.findOne({ paymentReferenceId: xenditFallbackVerification.invoiceId });
+            }
+        }
 
         console.log('Found pin:', pin ? `ID: ${pin.pinId}, Status: ${pin.paymentStatus}, Method: ${pin.paymentMethod}` : 'NOT FOUND');
 
@@ -343,8 +356,8 @@ router.post('/create-with-payment', verificationLimiter, async (req, res) => {
         const xenditCurrencies = ['PHP', 'IDR', 'THB', 'MYR', 'SGD'];
 
         if (xenditCurrencies.includes(pin.paymentMethod)) {
-            // SE Asia currencies use Xendit - use the stored invoice ID
-            paymentVerification = await verifyXenditPayment(pin.paymentReferenceId);
+            // SE Asia currencies use Xendit - use the stored invoice or external ID
+            paymentVerification = xenditFallbackVerification || await verifyXenditPayment(pin.paymentReferenceId);
         } else {
             // International currencies use Stripe - use the stored session ID
             paymentVerification = await verifyStripePayment(pin.paymentReferenceId);

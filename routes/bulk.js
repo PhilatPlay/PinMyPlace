@@ -24,7 +24,9 @@ function getBulkPrice(quantity, currencyCode = 'PHP') {
     
     // Apply 50% discount for all bulk purchases (10+)
     if (quantity >= 10) {
-        return Math.round(basePrice * 0.50);
+        const discounted = basePrice * 0.50;
+        const hasDecimals = basePrice < 10 || basePrice % 1 !== 0;
+        return hasDecimals ? parseFloat(discounted.toFixed(2)) : Math.round(discounted);
     }
     return null; // Not eligible for bulk pricing
 }
@@ -67,7 +69,11 @@ router.post('/purchase', bulkPurchaseLimiter, async (req, res) => {
             });
         }
 
-        const totalAmount = unitPrice * parseInt(quantity);
+        const qty = parseInt(quantity);
+        const hasDecimals = unitPrice % 1 !== 0;
+        const totalAmount = hasDecimals
+            ? parseFloat((unitPrice * qty).toFixed(2))
+            : unitPrice * qty;
         const cleanEmail = validator.normalizeEmail(email);
         const cleanPhone = phone.replace(/[\s\-().]/g, '');
         const currencyInfo = getCurrency(currency);

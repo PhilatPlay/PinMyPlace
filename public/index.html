@@ -494,9 +494,87 @@
             📍 Create Another Pin
           </button>
         </div>
-      </div>
+
       </div>
       <!-- End Main Pin Section -->
+
+      <!-- Access Code QR Result (separate from payment flow) -->
+      <div class="card" id="codeQrSection" style="display: none">
+        <div class="status success">
+          <h3>🎉 Access Code Redeemed!</h3>
+          <p>Here’s your delivery QR code. Save it and share with riders!</p>
+        </div>
+
+        <div
+          style="
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+          "
+        >
+          <div id="codeQrDetails" style="margin-bottom: 15px"></div>
+
+          <div
+            id="codeQrCanvas"
+            style="margin: 20px auto; display: inline-block"
+          ></div>
+
+          <div style="margin-top: 20px">
+            <button
+              onclick="downloadQR()"
+              style="
+                background: #28a745;
+                width: auto;
+                padding: 12px 30px;
+                margin: 5px;
+              "
+            >
+              📥 Download QR Code
+            </button>
+            <button
+              onclick="shareQR()"
+              style="
+                background: #007bff;
+                width: auto;
+                padding: 12px 30px;
+                margin: 5px;
+              "
+            >
+              📤 Share via Messenger
+            </button>
+          </div>
+
+          <div
+            style="
+              margin-top: 20px;
+              padding: 15px;
+              background: white;
+              border-radius: 8px;
+              border: 1px solid #ddd;
+            "
+          >
+            <strong>📱 Or share this link:</strong><br />
+            <input
+              type="text"
+              id="codeShareLink"
+              readonly
+              style="margin-top: 10px; font-size: 12px"
+            />
+            <button
+              onclick="copyCodeShareLink()"
+              style="width: auto; padding: 8px 20px; margin-top: 10px"
+            >
+              📋 Copy Link
+            </button>
+          </div>
+        </div>
+
+        <button onclick="createAnotherPin()" style="background: #667eea">
+          📍 Create Another Pin
+        </button>
+      </div>
 
       <!-- User Dashboard (Hidden, shows after login) -->
       <div id="userDashboard" style="display: none; min-height: 100px; width: 100%;">
@@ -929,9 +1007,9 @@
             return;
           }
 
-          // Show success and QR code
-          showStatus('✅ Pin created successfully!', 'success');
-          displayQRCode(data.pin);
+          // Show QR code
+          displayCodeQRCode(data.pin);
+          hideStatusMessage();
 
         } catch (error) {
           console.error('Code redemption error:', error);
@@ -939,29 +1017,144 @@
         }
       }
 
+      function hideStatusMessage() {
+        const statusElement = document.getElementById("statusMessage");
+        if (statusElement) {
+          statusElement.style.display = "none";
+        }
+      }
+
+      function displayCodeQRCode(pin) {
+        const codeSection = document.getElementById('codeQrSection');
+        const details = document.getElementById('codeQrDetails');
+        const canvas = document.getElementById('codeQrCanvas');
+        const shareLink = document.getElementById('codeShareLink');
+
+        if (!codeSection || !details || !canvas || !shareLink) {
+          console.error('Missing access-code QR elements');
+          alert('Error displaying QR code. Please contact support.');
+          return;
+        }
+
+        const lat = Number(pin?.correctedLatitude ?? pin?.latitude);
+        const lng = Number(pin?.correctedLongitude ?? pin?.longitude);
+        const coordsText = !isNaN(lat) && !isNaN(lng)
+          ? `${lat.toFixed(6)}, ${lng.toFixed(6)}`
+          : 'Coordinates unavailable';
+
+        details.innerHTML = `
+          <h4>${pin?.locationName || 'Location'}</h4>
+          <p style="color: #666; margin: 5px 0;">${pin?.address || 'No address specified'}</p>
+          <p style="font-size: 13px; color: #999;">
+            Pin ID: ${pin?.pinId || 'N/A'}<br>
+            <strong>📍 GPS Coordinates:</strong> ${coordsText}
+          </p>
+        `;
+
+        canvas.innerHTML = '';
+        if (!isNaN(lat) && !isNaN(lng)) {
+          const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+          new QRCode(canvas, {
+            text: mapUrl,
+            width: 200,
+            height: 200,
+            colorDark: "#000000",
+            colorLight: "#FFFFFF",
+            correctLevel: QRCode.CorrectLevel.H
+          });
+          shareLink.value = mapUrl;
+        } else {
+          shareLink.value = '';
+        }
+
+        // Hide other cards and show access-code QR section
+        const allCards = document.querySelectorAll('#mainPinSection .card');
+        allCards.forEach(card => {
+          if (card.id !== 'codeQrSection') {
+            card.style.display = 'none';
+          }
+        });
+        codeSection.style.display = 'block';
+        codeSection.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      function copyCodeShareLink() {
+        const shareLink = document.getElementById('codeShareLink');
+        if (shareLink) {
+          shareLink.select();
+          document.execCommand('copy');
+          showStatus('Link copied to clipboard!', 'success');
+        }
+      }
+
       // Display QR code (reuse existing function or create if not exists)
       function displayQRCode(pin) {
-        document.getElementById('codeModeCard').style.display = 'none';
-        document.getElementById('paymentSection').style.display = 'none';
-        
         const qrSection = document.getElementById('qrSection');
-        qrSection.style.display = 'block';
-        
-        // Populate QR code data
-        document.getElementById('displayLocationName').textContent = pin.locationName;
-        if (pin.address) {
-          document.getElementById('displayAddress').textContent = pin.address;
+        const qrDetails = document.getElementById('qrDetails');
+        const shareLink = document.getElementById('shareLink');
+        const mainSection = document.getElementById('mainPinSection');
+        const dashboardSection = document.getElementById('userDashboard');
+
+        if (!qrSection || !qrDetails || !shareLink) {
+          console.error('Missing QR elements');
+          alert('Error displaying QR code. Please contact support.');
+          return;
         }
-        document.getElementById('displayCoordinates').textContent = 
-          `${pin.correctedLatitude.toFixed(6)}, ${pin.correctedLongitude.toFixed(6)}`;
-        
-        // Generate QR code
-        const qrContainer = document.getElementById('qrCodeContainer');
-        qrContainer.innerHTML = '';
-        new QRCode(qrContainer, {
-          text: pin.qrCode,
-          width: 256,
-          height: 256
+
+        // Ensure QR container and its parents are visible
+        if (mainSection) {
+          mainSection.style.display = 'block';
+        }
+        if (dashboardSection) {
+          dashboardSection.style.display = 'none';
+        }
+        let parent = qrSection;
+        while (parent && parent !== document.body) {
+          const display = window.getComputedStyle(parent).display;
+          if (display === 'none') {
+            parent.style.display = 'block';
+          }
+          parent = parent.parentElement;
+        }
+
+        const resolvedPin = pin && pin.pin ? pin.pin : pin;
+        const lat = Number(resolvedPin?.correctedLatitude ?? resolvedPin?.latitude);
+        const lng = Number(resolvedPin?.correctedLongitude ?? resolvedPin?.longitude);
+
+        // Set details
+        const coordsText = !isNaN(lat) && !isNaN(lng)
+          ? `${lat.toFixed(6)}, ${lng.toFixed(6)}`
+          : 'Coordinates unavailable';
+
+        qrDetails.innerHTML = `
+          <h4>${resolvedPin?.locationName || 'Location'}</h4>
+          <p style="color: #666; margin: 5px 0;">${resolvedPin?.address || 'No address specified'}</p>
+          <p style="font-size: 13px; color: #999;">
+            Pin ID: ${resolvedPin?.pinId || 'N/A'}<br>
+            <strong>📍 GPS Coordinates:</strong> ${coordsText}
+          </p>
+        `;
+
+        // Generate QR code with link to location
+        if (!isNaN(lat) && !isNaN(lng)) {
+          const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+          generateQRCode(mapUrl);
+          shareLink.value = mapUrl;
+        } else {
+          qrSection.style.display = 'block';
+          shareLink.value = '';
+          return;
+        }
+
+        // Show QR section
+        qrSection.style.display = 'block';
+
+        // Hide other cards
+        const allCards = document.querySelectorAll('#mainPinSection .card');
+        allCards.forEach(card => {
+          if (card.id !== 'qrSection') {
+            card.style.display = 'none';
+          }
         });
 
         // Scroll to QR section

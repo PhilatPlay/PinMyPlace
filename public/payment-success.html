@@ -184,7 +184,8 @@
         try {
           const canvas = await html2canvas(qrElement);
           const link = document.createElement("a");
-          link.download = "pinmyplace-qr-code.png";
+          const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+          link.download = `droplogik-qr-${stamp}.png`;
           link.href = canvas.toDataURL();
           link.click();
         } catch (error) {

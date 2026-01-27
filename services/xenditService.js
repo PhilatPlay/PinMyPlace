@@ -116,21 +116,15 @@ async function verifyXenditPayment(chargeId) {
                 invoiceId: chargeId
             });
         } catch (error) {
-            // If that fails, it might be an external ID, try getting all invoices and filtering
-            // This is less efficient but handles the case where we have the external reference
-            if (chargeId.startsWith('BULK-') || chargeId.startsWith('XEN-')) {
-                // Try to get invoice by external ID
-                const invoices = await xendit.Invoice.getInvoices({
-                    externalId: chargeId,
-                    limit: 1
-                });
-                if (invoices && invoices.length > 0) {
-                    invoice = invoices[0];
-                } else {
-                    throw new Error(`No invoice found with external ID: ${chargeId}`);
-                }
+            // If that fails, it might be an external ID, try fetching by externalId
+            const invoices = await xendit.Invoice.getInvoices({
+                externalId: chargeId,
+                limit: 1
+            });
+            if (invoices && invoices.length > 0) {
+                invoice = invoices[0];
             } else {
-                throw error;
+                throw new Error(`No invoice found with external ID: ${chargeId}`);
             }
         }
 
@@ -150,7 +144,8 @@ async function verifyXenditPayment(chargeId) {
             metadata: metadata,  // Return extracted metadata
             amount: invoice.amount,
             currency: invoice.currency,
-            externalId: invoice.externalId
+            externalId: invoice.externalId,
+            invoiceId: invoice.id
         };
     } catch (error) {
         console.error('Xendit verification error:', error.message);

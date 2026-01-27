@@ -228,12 +228,31 @@ function generateQRCode(data) {
 
 // Download QR code function
 async function downloadQR() {
-    const qrElement = document.getElementById("qrCodeCanvas");
+    const codeQr = document.getElementById("codeQrCanvas");
+    const paymentQr = document.getElementById("qrCodeCanvas");
+    const qrElement = (codeQr && codeQr.offsetHeight > 0) ? codeQr : paymentQr;
+
+    if (!qrElement) {
+        alert("QR code not found.");
+        return;
+    }
     try {
-        const canvas = await html2canvas(qrElement);
+        const embeddedCanvas = qrElement.querySelector("canvas");
+        const embeddedImg = qrElement.querySelector("img");
+
         const link = document.createElement("a");
-        link.download = "pinmyplace-qr-code.png";
-        link.href = canvas.toDataURL();
+        const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+        link.download = `droplogik-qr-${stamp}.png`;
+
+        if (embeddedCanvas) {
+            link.href = embeddedCanvas.toDataURL("image/png");
+        } else if (embeddedImg && embeddedImg.src) {
+            link.href = embeddedImg.src;
+        } else {
+            const canvas = await html2canvas(qrElement);
+            link.href = canvas.toDataURL("image/png");
+        }
+
         link.click();
     } catch (error) {
         console.error("Failed to download QR code:", error);
@@ -265,7 +284,7 @@ function copyToClipboard(text) {
 
 // Initialize app on page load
 window.onload = async function () {
-    console.log("PinMyPlace initialized - Pay Per Pin Mode");
+    console.log("dropLogik initialized - Pay Per Pin Mode");
 
     // Detect and set user's currency
     await detectUserCurrency();

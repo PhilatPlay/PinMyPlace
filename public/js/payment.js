@@ -1,4 +1,4 @@
-// Payment Processing for PinMyPlace Premium
+// Payment Processing for dropLogik Premium
 
 // Initiate payment for premium subscription
 async function initiatePayment(plan) {
