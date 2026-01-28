@@ -127,6 +127,15 @@
           </div>
 
           <div id="mapContainer" style="position: relative">
+            <div style="text-align: center; margin: 10px 0;">
+              <button
+                id="mapLoadButton"
+                onclick="initializeMap()"
+                style="width: auto; padding: 10px 20px;"
+              >
+                📍 Use My Location
+              </button>
+            </div>
             <div id="map"></div>
 
             <!-- Map Controls -->
@@ -830,16 +839,15 @@
         // Clear any auto-filled values after a short delay (browsers auto-fill after load)
         setTimeout(clearAutoFilledFields, 100);
         
-        // Check if user is logged in first
+        // Initialize map immediately (falls back to IP-based location if GPS unavailable)
+        initializeMap();
+
+        // Update auth link based on login state
         const savedToken = localStorage.getItem('userToken');
-        
         if (savedToken) {
-          // User is logged in - checkUserSession will handle dashboard display
           console.log('User logged in, waiting for checkUserSession');
           updateAuthLink(true);
         } else {
-          // Not logged in - show map
-          initializeMap();
           updateAuthLink(false);
         }
       });
