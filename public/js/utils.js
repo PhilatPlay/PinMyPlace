@@ -186,6 +186,10 @@ function generateQRCode(data) {
         return;
     }
 
+    renderQRCode(qrElement, data);
+}
+
+function renderQRCode(qrElement, data) {
     try {
         // Clear any existing QR code
         qrElement.innerHTML = "";
@@ -200,15 +204,21 @@ function generateQRCode(data) {
             qrSize = 200; // Tablets
         }
 
+        qrElement.style.position = "relative";
+        qrElement.style.width = `${qrSize}px`;
+        qrElement.style.height = `${qrSize}px`;
+
         // Generate new QR code with responsive sizing
         new QRCode(qrElement, {
             text: data,
             width: qrSize,
             height: qrSize,
-            colorDark: "#000000",
+            colorDark: "#0000ff",
             colorLight: "#FFFFFF",
             correctLevel: QRCode.CorrectLevel.H,
         });
+
+        addQrLogoOverlay(qrElement, qrSize);
         console.log("QR code generated successfully");
     } catch (error) {
         console.error("QR code generation failed:", error);
@@ -226,6 +236,34 @@ function generateQRCode(data) {
     }
 }
 
+function addQrLogoOverlay(qrElement, qrSize) {
+    const existingLogo = qrElement.querySelector(".qr-logo");
+    if (existingLogo) {
+        existingLogo.remove();
+    }
+
+    const logoSize = Math.round(qrSize * 0.20);
+    const logo = document.createElement("img");
+    logo.className = "qr-logo";
+    logo.src = "/pics/for_qrcode.png";
+    logo.alt = "dropLogik";
+    logo.style.position = "absolute";
+    logo.style.left = "50%";
+    logo.style.top = "50%";
+    logo.style.transform = "translate(-50%, -50%)";
+    logo.style.width = `${logoSize}px`;
+    logo.style.height = `${logoSize}px`;
+    logo.style.objectFit = "contain";
+    logo.style.objectPosition = "center";
+    logo.style.background = "#ffffff";
+    logo.style.padding = "1px";
+    logo.style.borderRadius = "4px";
+    logo.style.boxShadow = "0 0 0 1px #ffffff";
+    logo.style.pointerEvents = "none";
+
+    qrElement.appendChild(logo);
+}
+
 // Download QR code function
 async function downloadQR() {
     const codeQr = document.getElementById("codeQrCanvas");
@@ -238,16 +276,44 @@ async function downloadQR() {
     }
     try {
         const embeddedCanvas = qrElement.querySelector("canvas");
-        const embeddedImg = qrElement.querySelector("img");
+        const embeddedImg = qrElement.querySelector("img:not(.qr-logo)");
+        const logoImg = qrElement.querySelector("img.qr-logo");
 
         const link = document.createElement("a");
         const stamp = new Date().toISOString().replace(/[:.]/g, "-");
         link.download = `droplogik-qr-${stamp}.png`;
 
         if (embeddedCanvas) {
-            link.href = embeddedCanvas.toDataURL("image/png");
+            const canvas = document.createElement("canvas");
+            canvas.width = embeddedCanvas.width;
+            canvas.height = embeddedCanvas.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(embeddedCanvas, 0, 0);
+            if (logoImg && logoImg.complete) {
+                const logoSize = Math.round(canvas.width * 0.22);
+                const x = (canvas.width - logoSize) / 2;
+                const y = (canvas.height - logoSize) / 2;
+                ctx.drawImage(logoImg, x, y, logoSize, logoSize);
+            }
+            link.href = canvas.toDataURL("image/png");
         } else if (embeddedImg && embeddedImg.src) {
-            link.href = embeddedImg.src;
+            const canvas = document.createElement("canvas");
+            await new Promise(resolve => {
+                if (embeddedImg.complete) return resolve();
+                embeddedImg.onload = resolve;
+                embeddedImg.onerror = resolve;
+            });
+            canvas.width = embeddedImg.naturalWidth || embeddedImg.width;
+            canvas.height = embeddedImg.naturalHeight || embeddedImg.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(embeddedImg, 0, 0);
+            if (logoImg && logoImg.complete) {
+                const logoSize = Math.round(canvas.width * 0.22);
+                const x = (canvas.width - logoSize) / 2;
+                const y = (canvas.height - logoSize) / 2;
+                ctx.drawImage(logoImg, x, y, logoSize, logoSize);
+            }
+            link.href = canvas.toDataURL("image/png");
         } else {
             const canvas = await html2canvas(qrElement);
             link.href = canvas.toDataURL("image/png");
@@ -285,6 +351,15 @@ function copyToClipboard(text) {
 // Initialize app on page load
 window.onload = async function () {
     console.log("dropLogik initialized - Pay Per Pin Mode");
+
+    if ('serviceWorker' in navigator) {
+        try {
+            await navigator.serviceWorker.register('/sw.js');
+            console.log('✅ Service worker registered');
+        } catch (error) {
+            console.warn('⚠️ Service worker registration failed', error);
+        }
+    }
 
     // Detect and set user's currency
     await detectUserCurrency();

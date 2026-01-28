@@ -38,9 +38,28 @@ app.use((req, res, next) => {
 });
 
 // CORS configuration
+const defaultOrigins = [
+    'https://droplogik.com',
+    'https://www.droplogik.com'
+];
+
+const envOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
+
+const frontendUrl = process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [];
+
+const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins, ...frontendUrl])];
+
 const corsOptions = {
     origin: process.env.NODE_ENV === 'production'
-        ? ['https://pinmyplace.ph', 'https://www.pinmyplace.ph']
+        ? (origin, callback) => {
+            // Allow same-origin or non-browser requests
+            if (!origin) return callback(null, true);
+            if (allowedOrigins.includes(origin)) return callback(null, true);
+            return callback(new Error('Not allowed by CORS'));
+        }
         : '*',
     credentials: true
 };
