@@ -1,7 +1,5 @@
-const CACHE_NAME = 'droplogik-static-v5';
+const CACHE_NAME = 'droplogik-static-v6';
 const CORE_ASSETS = [
-  '/',
-  '/index.html',
   '/css/styles.css',
   '/js/utils.js',
   '/js/map.js',
@@ -37,11 +35,24 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
+  const requestUrl = new URL(event.request.url);
+  const isHtmlRequest =
+    event.request.mode === 'navigate' ||
+    event.request.headers.get('accept')?.includes('text/html');
+
+  if (isHtmlRequest) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
       return fetch(event.request)
         .then(response => {
+          if (requestUrl.origin !== self.location.origin) return response;
           const copy = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
           return response;
