@@ -1,0 +1,32 @@
+# robots.txt for dropLogik
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /uploads/
+
+# Sitemaps
+Sitemap: https://droplogik.com/sitemap.xml
+
+# Common crawlers
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+# Crawl-delay for others
+Crawl-delay: 10

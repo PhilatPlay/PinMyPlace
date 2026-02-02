@@ -91,7 +91,7 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Serve index.html for all other routes (SPA)
+// Serve index.html for SPA routes (paths without file extensions)
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
