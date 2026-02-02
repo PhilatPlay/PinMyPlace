@@ -91,8 +91,16 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Serve index.html for SPA routes (paths without file extensions)
-app.get('*', (req, res) => {
+// Serve index.html for SPA routes (ONLY paths without file extensions)
+app.get('*', (req, res, next) => {
+    // If the path has a file extension, it's a static file request - skip to 404
+    const path = require('path');
+    const ext = path.extname(req.path);
+    if (ext) {
+        // Has extension - not a SPA route, return 404 if static middleware didn't serve it
+        return res.status(404).send('Not found');
+    }
+    // No extension - serve index.html for SPA routing
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
