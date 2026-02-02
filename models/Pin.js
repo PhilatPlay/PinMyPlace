@@ -94,6 +94,50 @@ const pinSchema = new mongoose.Schema({
     },
     lastAccessed: {
         type: Date
+    },
+    // Drone delivery fields (optional)
+    droneEnabled: {
+        type: Boolean,
+        default: false
+    },
+    droneData: {
+        landingZoneType: {
+            type: String,
+            enum: ['roof', 'yard', 'balcony', 'street', 'field', 'other'],
+            default: null
+        },
+        dropZoneDimensions: {
+            width: { type: Number, default: null }, // meters
+            length: { type: Number, default: null } // meters
+        },
+        elevation: {
+            type: Number,
+            default: null // meters above sea level (auto-fetched or user-provided)
+        },
+        heightAboveGround: {
+            type: Number,
+            default: null // meters above ground level (e.g., floor height)
+        },
+        floorNumber: {
+            type: String,
+            default: null // e.g., "3rd floor", "rooftop"
+        },
+        obstacles: {
+            type: String,
+            default: null // e.g., "trees on west side, power lines 5m north"
+        },
+        accessRestrictions: {
+            type: String,
+            default: null // e.g., "private property - permission granted"
+        },
+        approachDirection: {
+            type: String,
+            default: null // e.g., "from south", "avoid west side"
+        },
+        notes: {
+            type: String,
+            default: null // additional drone delivery instructions
+        }
     }
 });
 

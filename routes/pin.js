@@ -240,6 +240,23 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
             ? (payment.referenceNumber || payment.chargeId)
             : (payment.sessionId || payment.referenceNumber || payment.chargeId);
 
+        // Prepare drone data if provided
+        const droneEnabled = req.body.droneEnabled === 'true' || req.body.droneEnabled === true;
+        const droneData = droneEnabled ? {
+            landingZoneType: req.body.landingZoneType || null,
+            dropZoneDimensions: {
+                width: req.body.dropZoneWidth ? parseFloat(req.body.dropZoneWidth) : null,
+                length: req.body.dropZoneLength ? parseFloat(req.body.dropZoneLength) : null
+            },
+            elevation: null, // Can be fetched from elevation API later
+            heightAboveGround: req.body.heightAboveGround ? parseFloat(req.body.heightAboveGround) : null,
+            floorNumber: req.body.floorNumber || null,
+            obstacles: req.body.droneObstacles || null,
+            accessRestrictions: req.body.accessRestrictions || null,
+            approachDirection: req.body.approachDirection || null,
+            notes: req.body.droneNotes || null
+        } : undefined;
+
         // Store pin data temporarily in a "pending" pin record
         // This will be updated to "verified" after payment confirmation
         const pendingPin = new Pin({
@@ -256,7 +273,9 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
             // Store external reference for Xendit, sessionId for Stripe, referenceNumber for PayMongo
             paymentReferenceId: storedPaymentReferenceId,
             paymentStatus: 'pending',
-            qrCode: generateQRCode()
+            qrCode: generateQRCode(),
+            droneEnabled,
+            droneData
         });
 
         await pendingPin.save();
@@ -575,6 +594,23 @@ router.post('/create-with-code', verificationLimiter, async (req, res) => {
         // Generate QR code URL
         const qrUrl = `https://www.google.com/maps?q=${correctedLatitude},${correctedLongitude}`;
 
+        // Prepare drone data if provided
+        const droneEnabled = req.body.droneEnabled === 'true' || req.body.droneEnabled === true;
+        const droneData = droneEnabled ? {
+            landingZoneType: req.body.landingZoneType || null,
+            dropZoneDimensions: {
+                width: req.body.dropZoneWidth ? parseFloat(req.body.dropZoneWidth) : null,
+                length: req.body.dropZoneLength ? parseFloat(req.body.dropZoneLength) : null
+            },
+            elevation: null, // Can be fetched from elevation API later
+            heightAboveGround: req.body.heightAboveGround ? parseFloat(req.body.heightAboveGround) : null,
+            floorNumber: req.body.floorNumber || null,
+            obstacles: req.body.droneObstacles || null,
+            accessRestrictions: req.body.accessRestrictions || null,
+            approachDirection: req.body.approachDirection || null,
+            notes: req.body.droneNotes || null
+        } : undefined;
+
         // Create the pin
         const newPin = new Pin({
             pinId: generatePinId(),
@@ -592,7 +628,9 @@ router.post('/create-with-code', verificationLimiter, async (req, res) => {
             redeemedCode: accessCode.toUpperCase(),
             redemptionMethod: 'bulk_code',
             qrCode: qrUrl,
-            isActive: true
+            isActive: true,
+            droneEnabled,
+            droneData
         });
 
         await newPin.save();

@@ -39,6 +39,9 @@ function proceedToPayment() {
     // Generate payment reference number
     paymentReferenceNumber = 'PIN-' + Date.now().toString().slice(-8);
 
+    // Collect drone data before hiding the form
+    const droneData = collectDroneData();
+
     // Store pin data temporarily
     currentPinData = {
         locationName: locationName,
@@ -47,7 +50,8 @@ function proceedToPayment() {
         longitude: originalPosition.lng,
         correctedLatitude: correctedPosition.lat,
         correctedLongitude: correctedPosition.lng,
-        referenceNumber: paymentReferenceNumber
+        referenceNumber: paymentReferenceNumber,
+        droneData: droneData // Store drone data with pin data
     };
 
     // Hide Step 1 map section and show payment section
@@ -107,6 +111,11 @@ async function proceedToGCashPayment() {
             customerPhone: phone,
             currency: currency
         };
+
+        // Add drone data if it was collected earlier
+        if (currentPinData.droneData) {
+            Object.assign(payload, currentPinData.droneData);
+        }
 
         // If agent is logged in, include agent ID
         if (typeof isAgent !== 'undefined' && isAgent && agentData) {
