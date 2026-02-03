@@ -39,9 +39,25 @@ async function createStripePayment(amount, currency, description, metadata = {},
         // Stripe will replace {CHECKOUT_SESSION_ID} with actual session ID
         const successUrlWithRef = `${successUrl}?session_id={CHECKOUT_SESSION_ID}`;
 
+        // Payment methods available based on currency
+        const paymentMethods = ['card']; // Cards available everywhere
+        
+        // Add e-wallets based on currency
+        if (currency === 'PHP') {
+            paymentMethods.push('paymaya', 'gcash', 'grabpay');
+        } else if (currency === 'MYR') {
+            paymentMethods.push('fpx', 'grabpay');
+        } else if (currency === 'SGD') {
+            paymentMethods.push('paynow', 'grabpay');
+        } else if (currency === 'THB') {
+            paymentMethods.push('promptpay');
+        } else if (currency === 'IDR') {
+            // Indonesian wallets coming soon in Stripe
+        }
+
         // Create Stripe Checkout Session
         const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
+            payment_method_types: paymentMethods,
             line_items: [
                 {
                     price_data: {
