@@ -1,3 +1,11 @@
+// ==============================================================================
+// XENDIT SERVICE - TEMPORARILY DISABLED
+// ==============================================================================
+// This service is currently not in use. All payments are routed through Stripe.
+// Code is kept here for easy reversal if needed.
+// To re-enable: Uncomment the import in routes/pin.js and update routing logic.
+// ==============================================================================
+
 const { Xendit } = require('xendit-node');
 
 const XENDIT_SECRET_KEY = process.env.XENDIT_SECRET_KEY;

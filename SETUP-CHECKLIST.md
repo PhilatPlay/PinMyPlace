@@ -6,14 +6,14 @@
 - [ ] MongoDB running (local or Atlas cloud)
 - [ ] Git installed (optional)
 
-## 🔑 PayMongo Account Setup
+## 🔑 Stripe Account Setup
 
-- [ ] Created account at https://dashboard.paymongo.com
+- [ ] Created account at https://dashboard.stripe.com
 - [ ] Verified email address
-- [ ] Completed KYC (for live payments)
+- [ ] Completed business verification (for live payments)
 - [ ] Located API keys in Developers > API Keys
-- [ ] Copied test secret key (sk*test*...)
-- [ ] Copied test public key (pk*test*...)
+- [ ] Copied test secret key (sk_test_...)
+- [ ] Copied test publishable key (pk_test_...)
 
 ## 📁 Project Setup
 
@@ -22,8 +22,7 @@
 - [ ] Created `.env` file in root directory
 - [ ] Added MongoDB connection string to `.env`
 - [ ] Added JWT_SECRET to `.env` (any random string)
-- [ ] Added PAYMONGO_SECRET_KEY to `.env`
-- [ ] Added PAYMONGO_PUBLIC_KEY to `.env`
+- [ ] Added STRIPE_SECRET_KEY to `.env`
 
 ## 🗄️ Database Setup
 
@@ -42,8 +41,8 @@
 ## 💳 Payment Testing
 
 - [ ] Clicked "Pay ₱100 via GCash Now"
-- [ ] Redirected to PayMongo payment page
-- [ ] Used test GCash credentials from PayMongo
+- [ ] Redirected to Stripe payment page
+- [ ] Used test card 4242 4242 4242 4242
 - [ ] Completed test payment
 - [ ] Redirected back to success page
 - [ ] QR code displayed with coordinates
@@ -59,13 +58,13 @@
 
 ## 🌐 Production Preparation (When Ready)
 
-- [ ] Switched to live PayMongo keys (sk*live*... and pk*live*...)
+- [ ] Switched to live Stripe keys (sk_live_... and pk_live_...)
 - [ ] Configured production MongoDB database
 - [ ] Set up domain name
 - [ ] SSL certificate installed (HTTPS)
 - [ ] Environment variables set on hosting platform
-- [ ] PayMongo webhooks configured with production URL
-- [ ] Tested with real ₱100 GCash payment
+- [ ] Stripe webhooks configured with production URL
+- [ ] Tested with real payment
 - [ ] Confirmed QR code generation works
 - [ ] Agent system tested end-to-end
 
@@ -80,16 +79,16 @@
 
 ### Payment link not created
 
-- Verify PayMongo keys are correct (no extra spaces)
-- Check PAYMONGO*SECRET_KEY starts with `sk_test*`or`sk*live*`
+- Verify Stripe keys are correct (no extra spaces)
+- Check STRIPE_SECRET_KEY starts with `sk_test_` or `sk_live_`
 - Look at server console for error messages
-- Test keys in PayMongo dashboard API explorer
+- Test keys in Stripe dashboard API explorer
 
 ### Payment not verified
 
 - Wait 10-15 seconds after payment
 - Refresh the success page
-- Check PayMongo dashboard for payment status
+- Check Stripe dashboard for payment status
 - Check server logs for verification errors
 
 ### QR code not showing

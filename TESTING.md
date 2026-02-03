@@ -1,4 +1,4 @@
-# PayMongo Integration Testing Guide
+# Stripe Payment Testing Guide
 
 ## Testing the Payment Flow
 
@@ -21,25 +21,26 @@ Navigate to `http://localhost:3000`
 5. Add optional landmarks/address details
 6. Click **"Next: Proceed to Payment"**
 
-### Step 4: Pay with GCash
+### Step 4: Pay with Card or E-Wallet
 
 1. Enter your mobile number (11 digits, e.g., 09171234567)
-2. Click **"Pay ₱100 via GCash Now""
-3. You'll be redirected to PayMongo's payment page
+2. Click **"Pay ₱100 via GCash Now"**
+3. You'll be redirected to Stripe's payment page
 
 ### Step 5: Complete Payment
 
-**For Testing (PayMongo Test Mode):**
+**For Testing (Stripe Test Mode):**
 
-- Use the test GCash number provided by PayMongo
-- Follow the on-screen instructions to simulate payment
-- PayMongo will provide test credentials in your dashboard
+- Use test card: 4242 4242 4242 4242
+- Any future expiry date (e.g., 12/34)
+- Any 3-digit CVC (e.g., 123)
+- Any billing ZIP code
 
 **For Live Payments:**
 
-- Enter your actual GCash number
-- Approve the payment in your GCash app
-- Enter your MPIN to confirm
+- Enter your actual card details or select e-wallet (GCash, GrabPay, etc.)
+- Complete authentication if required
+- Confirm payment
 
 ### Step 6: Get Your QR Code
 

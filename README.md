@@ -17,7 +17,7 @@ Help Filipinos share their exact location for deliveries using QR codes - no sig
 ## ✅ Solution
 
 1. User drops a pin on their exact GPS location
-2. Pay ₱100 via GCash (automated payment)
+2. Pay ₱100 via card or e-wallet (automated payment)
 3. Get QR code with coordinates instantly
 4. Share with delivery riders
 5. Riders scan → exact location opens in Google Maps
@@ -27,7 +27,7 @@ Help Filipinos share their exact location for deliveries using QR codes - no sig
 ### Pay-Per-Pin (Individual Users)
 
 - **₱100 per pin** - Pay only when you need it
-- **90-day validity** - Long-lasting for repeat deliveries
+- **Never expires** - Use your pin for years
 - **Instant QR code** - Delivered immediately after payment
 - **No subscription** - No monthly fees
 
@@ -54,14 +54,14 @@ Help Filipinos share their exact location for deliveries using QR codes - no sig
 - Node.js v18+ with Express.js
 - MongoDB with Mongoose ODM
 - JWT authentication (agents only)
-- PayMongo API for GCash payments
+- Stripe API for payments
 
 **Payment Processing:**
 
-- PayMongo payment links
-- Automated GCash verification
-- No manual screenshot uploads
+- Stripe checkout sessions
+- Automated payment verification
 - Instant pin activation
+- Supports 135+ currencies
 
 ## 📋 Setup Instructions
 

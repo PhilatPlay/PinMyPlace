@@ -10,19 +10,18 @@ The pay-per-pin model doesn't require login on the main page, so this function c
 
 ## Error: "Payment system not configured"
 
-**Cause:** Missing PayMongo API keys in `.env` file
+**Cause:** Missing Stripe API key in `.env` file
 
 **Solution:**
 
 1. Make sure you have a `.env` file in the project root
-2. Add your PayMongo keys:
+2. Add your Stripe key:
 
 ```env
-PAYMONGO_SECRET_KEY=sk_test_your_key_here
-PAYMONGO_PUBLIC_KEY=pk_test_your_key_here
+STRIPE_SECRET_KEY=sk_test_your_key_here
 ```
 
-3. Get keys from: https://dashboard.paymongo.com/developers/api-keys
+3. Get keys from: https://dashboard.stripe.com/apikeys
 4. Restart the server: `npm run dev`
 
 ---
@@ -60,11 +59,11 @@ PORT=3001
 
 **Possible Causes:**
 
-1. **Missing PayMongo keys** (most common)
+1. **Missing Stripe key** (most common)
 
    - Check `.env` file exists
-   - Verify keys are correct (no extra spaces)
-   - Keys should start with `sk_test_` or `sk_live_`
+   - Verify key is correct (no extra spaces)
+   - Key should start with `sk_test_` or `sk_live_`
 
 2. **MongoDB not connected**
 
