@@ -138,20 +138,7 @@ async function proceedToGCashPayment() {
             sessionStorage.setItem('paymentTimestamp', Date.now().toString());
 
             // Open payment in a NEW WINDOW
-            const paymentWindow = window.open(result.paymentLink, '_blank', 'width=600,height=800');
-
-            // Show message to user with timeout warning
-            const expiryTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString('en-PH', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-
-            showStatusInElement("paymentResult",
-                `Payment window opened! Complete payment there and you'll see your QR code.<br>` +
-                `<small style="color: #856404;">⏰ Payment link expires: ${expiryTime}</small>`,
-                "info");
+            window.open(result.paymentLink, '_blank', 'width=600,height=800');
         } else {
             showStatusInElement("paymentResult", `Error: ${result.error || 'Failed to create payment'}`, "error");
         }
