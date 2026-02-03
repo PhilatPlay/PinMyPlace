@@ -360,19 +360,12 @@
             <small style="color: #666;">Reference Number: <strong id="paymentRefNumber">-</strong></small>
           </div>
           
-          <!-- Payment Method Selection -->
+          <!-- Access Code Option -->
           <div style="margin-bottom: 20px; text-align: center;">
-            <button 
-              id="paymentModeBtn" 
-              onclick="showPaymentMode()"
-              style="padding: 10px 20px; margin: 5px; border: 2px solid #007bff; background: #007bff; color: white; border-radius: 8px; cursor: pointer; font-size: 16px;"
-            >
-              💳 Pay Now (<span class="dynamic-price">₱100</span>)
-            </button>
             <button 
               id="codeModeBtn" 
               onclick="showCodeMode()"
-              style="padding: 10px 20px; margin: 5px; border: 2px solid #28a745; background: white; color: #28a745; border-radius: 8px; cursor: pointer; font-size: 16px;"
+              style="padding: 10px 20px; margin: 5px; border: 2px solid #28a745; background: #28a745; color: white; border-radius: 8px; cursor: pointer; font-size: 16px;"
             >
               🎫 I Have an Access Code
             </button>
@@ -565,6 +558,15 @@
           >
             ✅ Create Pin with Code
           </button>
+
+          <div style="text-align: center; margin-top: 15px;">
+            <button 
+              onclick="showPaymentMode()" 
+              style="background: white; color: #007bff; border: 2px solid #007bff; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; width: auto;"
+            >
+              ← Back to Payment
+            </button>
+          </div>
 
           <div style="text-align: center; margin-top: 15px;">
             <a href="/bulk-purchase.html" style="color: #007bff; text-decoration: underline; font-size: 14px;">
@@ -975,10 +977,10 @@
     </div>
 
     <!-- Application JavaScript -->
-    <script src="/js/utils.js?v=2"></script>
-    <script src="/js/map.js?v=2"></script>
-    <script src="/js/payment-per-pin.js?v=2"></script>
-    <script src="/js/user.js?v=2"></script>
+    <script src="/js/utils.js?v=7"></script>
+    <script src="/js/map.js?v=7"></script>
+    <script src="/js/payment-per-pin.js?v=7"></script>
+    <script src="/js/user.js?v=7"></script>
     <script>
       // Clear any auto-filled values from form fields
       function clearAutoFilledFields() {
@@ -1111,20 +1113,12 @@
       function showPaymentMode() {
         document.getElementById('paymentMode').style.display = 'block';
         document.getElementById('codeModeCard').style.display = 'none';
-        document.getElementById('paymentModeBtn').style.background = '#007bff';
-        document.getElementById('paymentModeBtn').style.color = 'white';
-        document.getElementById('codeModeBtn').style.background = 'white';
-        document.getElementById('codeModeBtn').style.color = '#28a745';
       }
 
       // Show code mode
       function showCodeMode() {
         document.getElementById('paymentMode').style.display = 'none';
         document.getElementById('codeModeCard').style.display = 'block';
-        document.getElementById('codeModeBtn').style.background = '#28a745';
-        document.getElementById('codeModeBtn').style.color = 'white';
-        document.getElementById('paymentModeBtn').style.background = 'white';
-        document.getElementById('paymentModeBtn').style.color = '#007bff';
       }
 
       // Toggle drone delivery fields

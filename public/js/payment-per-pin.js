@@ -137,6 +137,9 @@ async function proceedToGCashPayment() {
             sessionStorage.setItem('paymentReference', result.referenceNumber);
             sessionStorage.setItem('paymentTimestamp', Date.now().toString());
 
+            // Clear the status message
+            showStatusInElement("paymentResult", "", "info");
+
             // Open payment in a NEW WINDOW
             window.open(result.paymentLink, '_blank', 'width=600,height=800');
         } else {
@@ -339,49 +342,8 @@ function createAnotherPin() {
         return;
     }
 
-    // Reset form
-    document.getElementById("locationName").value = "";
-    document.getElementById("mapAddress").value = "";
-    document.getElementById("paymentProof").value = "";
-    document.getElementById("customerPhone").value = "";
-    document.getElementById("proofPreview").style.display = "none";
-
-    // Hide sections
-    const paymentSection = document.getElementById("paymentSection");
-    const qrSection = document.getElementById("qrSection");
-    const codeQrSection = document.getElementById("codeQrSection");
-    const addressSection = document.getElementById("addressSection");
-    const mapControls = document.getElementById("mapControls");
-
-    if (paymentSection) paymentSection.style.display = "none";
-    if (qrSection) qrSection.style.display = "none";
-    if (codeQrSection) codeQrSection.style.display = "none";
-    if (addressSection) addressSection.style.display = "none";
-    if (mapControls) mapControls.style.display = "none";
-
-    // Ensure main pin section is visible
-    const mainSection = document.getElementById("mainPinSection");
-    if (mainSection) {
-        mainSection.style.display = "block";
-        const mainCards = document.querySelectorAll('#mainPinSection > .card');
-        mainCards.forEach(card => {
-            if (!card.id || card.id !== 'qrSection') {
-                card.style.display = "block";
-            }
-        });
-    }
-
-    // Clear map
-    if (map) {
-        map.remove();
-        map = null;
-    }
-    originalPosition = null;
-    correctedPosition = null;
-    currentPinData = null;
-
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Simply reload the page to start fresh
+    window.location.href = '/';
 }
 
 // Helper function to show status in specific element
