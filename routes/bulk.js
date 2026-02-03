@@ -5,8 +5,7 @@ const validator = require('validator');
 const BulkCode = require('../models/BulkCode');
 const BulkPurchaseSession = require('../models/BulkPurchaseSession');
 // PayMongo removed - not in use
-// Xendit temporarily disabled for bulk purchases too
-// const { createXenditPayment, verifyXenditPayment } = require('../services/xenditService');
+const { createXenditPayment, verifyXenditPayment } = require('../services/xenditService');
 const { createStripePayment, verifyStripePayment } = require('../services/stripeService');
 const { getCurrency } = require('../config/currencies');
 
@@ -95,39 +94,38 @@ router.post('/purchase', bulkPurchaseLimiter, async (req, res) => {
             referenceNumber: referenceNumber
         };
 
-        // Using Stripe for all bulk purchases
-        // Xendit code commented out - can be re-enabled if needed
+        // Payment gateway routing:
+        // 1. Xendit for SE Asia e-wallets (PHP, IDR, THB, MYR, SGD, VND) - supports GCash
+        // 2. Stripe for international currencies (USD, HKD, etc.)
         let paymentResult;
-        let paymentGateway = 'stripe';
+        let paymentGateway;
 
-        // --- XENDIT CODE (TEMPORARILY DISABLED) ---
-        // const xenditCurrencies = ['PHP', 'IDR', 'THB', 'MYR', 'SGD', 'VND'];
-        // if (xenditCurrencies.includes(currencyInfo.code)) {
-        //     paymentGateway = 'xendit';
-        //     paymentResult = await createXenditPayment(
-        //         totalAmount,
-        //         currency,
-        //         `Bulk Purchase - ${quantity} dropLogik Pin Codes`,
-        //         metadata,
-        //         successUrl,
-        //         cleanPhone
-        //     );
-        // } else {
-        // --- END XENDIT CODE ---
+        // Currencies supported by Xendit
+        const xenditCurrencies = ['PHP', 'IDR', 'THB', 'MYR', 'SGD', 'VND'];
 
-        // Use Stripe for all currencies
-        paymentResult = await createStripePayment(
-            totalAmount,
-            currencyInfo.code,
-            `Bulk Purchase - ${quantity} dropLogik Pin Codes`,
-            metadata,
-            successUrl,
-            cancelUrl
-        );
-        
-        // --- XENDIT CODE (TEMPORARILY DISABLED) ---
-        // }
-        // --- END XENDIT CODE ---
+        if (xenditCurrencies.includes(currencyInfo.code)) {
+            // Use Xendit for SE Asia (e-wallets + local payment methods)
+            paymentGateway = 'xendit';
+            paymentResult = await createXenditPayment(
+                totalAmount,
+                currency,
+                `Bulk Purchase - ${quantity} dropLogik Pin Codes`,
+                metadata,
+                successUrl,
+                cleanPhone
+            );
+        } else {
+            // Use Stripe for international currencies (USD, HKD, etc.)
+            paymentGateway = 'stripe';
+            paymentResult = await createStripePayment(
+                totalAmount,
+                currencyInfo.code,
+                `Bulk Purchase - ${quantity} dropLogik Pin Codes`,
+                metadata,
+                successUrl,
+                cancelUrl
+            );
+        }
 
         if (!paymentResult.success) {
             return res.status(500).json({
@@ -136,8 +134,11 @@ router.post('/purchase', bulkPurchaseLimiter, async (req, res) => {
             });
         }
 
-        // Use Stripe session ID as payment reference
-        const paymentRef = paymentResult.sessionId || paymentResult.referenceNumber;
+        // For Xendit, use the referenceNumber we generated (BULK-xxx)
+        // For Stripe, use the sessionId
+        const paymentRef = paymentGateway === 'xendit' 
+            ? referenceNumber 
+            : (paymentResult.sessionId || paymentResult.referenceNumber);
 
         // Save purchase session to database (survives payment gateway redirects)
         const session = new BulkPurchaseSession({
@@ -220,29 +221,27 @@ router.post('/verify-and-generate', async (req, res) => {
         
         console.log('Session lookup result:', session ? 'found' : 'not found');
 
-        // Verify payment with Stripe
+        // Try verifying with both payment gateways (we don't know which was used)
         let verification;
-        let paymentGateway = 'stripe';
+        let paymentGateway = 'unknown';
         
         console.log('Attempting to verify payment:', paymentReferenceId);
         
-        // --- XENDIT CODE (TEMPORARILY DISABLED) ---
-        // verification = await verifyXenditPayment(paymentReferenceId);
-        // if (verification.success && verification.isPaid) {
-        //     paymentGateway = 'xendit';
-        //     console.log('Payment verified with Xendit');
-        // } else {
-        // --- END XENDIT CODE ---
+        // Try Xendit first (most SE Asia currencies)
+        verification = await verifyXenditPayment(paymentReferenceId);
         
-        // Verify with Stripe
-        verification = await verifyStripePayment(paymentReferenceId);
         if (verification.success && verification.isPaid) {
-            console.log('Payment verified with Stripe');
+            paymentGateway = 'xendit';
+            console.log('Payment verified with Xendit');
+        } else {
+            // If Xendit fails, try Stripe (for USD, HKD, etc.)
+            console.log('Xendit verification failed, trying Stripe...');
+            verification = await verifyStripePayment(paymentReferenceId);
+            if (verification.success && verification.isPaid) {
+                paymentGateway = 'stripe';
+                console.log('Payment verified with Stripe');
+            }
         }
-        
-        // --- XENDIT CODE (TEMPORARILY DISABLED) ---
-        // }
-        // --- END XENDIT CODE ---
 
         console.log('Verification result:', { 
             success: verification.success, 

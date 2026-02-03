@@ -40,11 +40,12 @@ async function createStripePayment(amount, currency, description, metadata = {},
         const successUrlWithRef = `${successUrl}?session_id={CHECKOUT_SESSION_ID}`;
 
         // Payment methods available based on currency
+        // Note: GCash and PayMaya require Stripe Connect in Philippines
         const paymentMethods = ['card']; // Cards available everywhere
         
-        // Add e-wallets based on currency
+        // Add valid e-wallets based on currency
         if (currency === 'PHP') {
-            paymentMethods.push('paymaya', 'gcash', 'grabpay');
+            paymentMethods.push('grabpay'); // GCash/PayMaya require special setup
         } else if (currency === 'MYR') {
             paymentMethods.push('fpx', 'grabpay');
         } else if (currency === 'SGD') {
@@ -52,7 +53,7 @@ async function createStripePayment(amount, currency, description, metadata = {},
         } else if (currency === 'THB') {
             paymentMethods.push('promptpay');
         } else if (currency === 'IDR') {
-            // Indonesian wallets coming soon in Stripe
+            paymentMethods.push('grabpay'); // Available in Indonesia too
         }
 
         // Create Stripe Checkout Session

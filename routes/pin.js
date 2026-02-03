@@ -10,8 +10,7 @@ const BulkCode = require('../models/BulkCode');
 const TrialCode = require('../models/TrialCode');
 // PayMongo removed - not in use
 const { createStripePayment, verifyStripePayment, handleStripeWebhook } = require('../services/stripeService');
-// Xendit temporarily disabled - keeping code for easy reversal if needed
-// const { createXenditPayment, verifyXenditPayment, handleXenditWebhook } = require('../services/xenditService');
+const { createXenditPayment, verifyXenditPayment, handleXenditWebhook } = require('../services/xenditService');
 const { getCurrency } = require('../config/currencies');
 
 // Rate limiters - generous limits for agents serving multiple customers
@@ -165,40 +164,38 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
         const paymentAmount = currencyInfo.price;
 
         // Payment gateway routing:
-        // Using Stripe for all currencies (supports 135+ countries)
-        // Xendit code commented out - can be re-enabled if needed
+        // Payment gateway routing:
+        // 1. Xendit for SE Asia e-wallets (PHP, IDR, THB, MYR, SGD) - supports GCash directly
+        // 2. Stripe for other currencies (VND, USD, HKD)
         let payment;
-        let paymentGateway = 'stripe';
+        let paymentGateway = 'xendit';
 
-        // --- XENDIT CODE (TEMPORARILY DISABLED) ---
         // Currencies enabled in Xendit account
-        // const xenditCurrencies = ['PHP', 'IDR', 'THB', 'MYR', 'SGD'];
-        // if (xenditCurrencies.includes(currencyInfo.code)) {
-        //     paymentGateway = 'xendit';
-        //     payment = await createXenditPayment(
-        //         paymentAmount,
-        //         currencyInfo.code,
-        //         `PinMyPlace - GPS Pin for ${sanitizedLocationName}`,
-        //         metadata,
-        //         successUrl,
-        //         customerPhone
-        //     );
-        // } else {
-        // --- END XENDIT CODE ---
+        const xenditCurrencies = ['PHP', 'IDR', 'THB', 'MYR', 'SGD'];
 
-        // Use Stripe for all currencies
-        payment = await createStripePayment(
-            paymentAmount,
-            currencyInfo.code,
-            `PinMyPlace - GPS Pin for ${sanitizedLocationName}`,
-            metadata,
-            successUrl,
-            cancelUrl
-        );
-        
-        // --- XENDIT CODE (TEMPORARILY DISABLED) ---
-        // }
-        // --- END XENDIT CODE ---
+        if (xenditCurrencies.includes(currencyInfo.code)) {
+            // Use Xendit for SE Asia (e-wallets + local payment methods including GCash)
+            paymentGateway = 'xendit';
+            payment = await createXenditPayment(
+                paymentAmount,
+                currencyInfo.code,
+                `PinMyPlace - GPS Pin for ${sanitizedLocationName}`,
+                metadata,
+                successUrl,
+                customerPhone
+            );
+        } else {
+            // Use Stripe for international currencies (VND, USD, HKD, etc.)
+            paymentGateway = 'stripe';
+            payment = await createStripePayment(
+                paymentAmount,
+                currencyInfo.code,
+                `PinMyPlace - GPS Pin for ${sanitizedLocationName}`,
+                metadata,
+                successUrl,
+                cancelUrl
+            );
+        }
 
         if (!payment.success) {
             return res.status(500).json({
@@ -207,8 +204,10 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
             });
         }
 
-        // Store Stripe session ID as payment reference
-        const storedPaymentReferenceId = payment.sessionId || payment.referenceNumber || payment.chargeId;
+        // Store external reference for Xendit, sessionId for Stripe
+        const storedPaymentReferenceId = paymentGateway === 'xendit'
+            ? (payment.referenceNumber || payment.chargeId)
+            : (payment.sessionId || payment.referenceNumber || payment.chargeId);
 
         // Prepare drone data if provided
         const droneEnabled = req.body.droneEnabled === 'true' || req.body.droneEnabled === true;
@@ -240,7 +239,7 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
             correctedLongitude: parseFloat(correctedLongitude),
             paymentAmount: paymentAmount,
             paymentMethod: currencyInfo.code,
-            // Store Stripe session ID
+            // Store external reference for Xendit, sessionId for Stripe
             paymentReferenceId: storedPaymentReferenceId,
             paymentStatus: 'pending',
             qrCode: generateQRCode(),
@@ -253,7 +252,7 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
         res.json({
             success: true,
             paymentLink: payment.paymentLink,
-            // Return Stripe session ID
+            // Return external reference for Xendit, sessionId for Stripe
             referenceNumber: storedPaymentReferenceId,
             amount: paymentAmount,
             currency: currencyInfo.code,
