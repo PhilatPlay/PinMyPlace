@@ -137,7 +137,7 @@ async function proceedToGCashPayment() {
             sessionStorage.setItem('paymentReference', result.referenceNumber);
             sessionStorage.setItem('paymentTimestamp', Date.now().toString());
 
-            // Open PayMongo in a NEW WINDOW
+            // Open payment in a NEW WINDOW
             const paymentWindow = window.open(result.paymentLink, '_blank', 'width=600,height=800');
 
             // Show message to user with timeout warning
@@ -149,19 +149,9 @@ async function proceedToGCashPayment() {
             });
 
             showStatusInElement("paymentResult",
-                `Payment window opened! Complete payment there, then click the button below to get your QR code.<br>` +
+                `Payment window opened! Complete payment there and you'll see your QR code.<br>` +
                 `<small style="color: #856404;">⏰ Payment link expires: ${expiryTime}</small>`,
                 "info");
-
-            // Add a button to check payment status
-            const checkButton = document.createElement('button');
-            checkButton.textContent = '📍 Get my QR Code';
-            checkButton.className = 'register-btn';
-            checkButton.style.marginTop = '10px';
-            checkButton.onclick = function () {
-                verifyPaymentStatus(result.referenceNumber);
-            };
-            document.getElementById("paymentResult").appendChild(checkButton);
         } else {
             showStatusInElement("paymentResult", `Error: ${result.error || 'Failed to create payment'}`, "error");
         }
