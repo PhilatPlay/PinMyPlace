@@ -17,6 +17,11 @@ function updatePaymentAmount() {
         button.innerHTML = `💰 Pay ${currencyInfo.symbol}${currencyInfo.price.toLocaleString()} Now`;
     }
     
+    // Update payment methods if function exists
+    if (typeof updatePaymentMethods === 'function') {
+        updatePaymentMethods(currency);
+    }
+    
     // Save preference when user manually changes it
     saveCurrencyPreference(currency);
 }

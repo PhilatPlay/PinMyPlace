@@ -344,8 +344,8 @@
                   color: #666;
                 "
               >
-                <div>
-                  💳 Accepts: <strong>GCash • Maya • GrabPay • Cards</strong>
+                <div id="mapPaymentMethods">
+                  💳 Accepts: <strong class="dynamic-payment-methods">GCash • Maya • GrabPay • Cards</strong>
                 </div>
               </div>
             </div>
@@ -496,6 +496,7 @@
               💳 Accepted Payment Methods:
             </div>
             <div
+              id="paymentMethodsList"
               style="
                 display: flex;
                 justify-content: center;
@@ -977,10 +978,10 @@
     </div>
 
     <!-- Application JavaScript -->
-    <script src="/js/utils.js?v=7"></script>
-    <script src="/js/map.js?v=7"></script>
-    <script src="/js/payment-per-pin.js?v=7"></script>
-    <script src="/js/user.js?v=7"></script>
+    <script src="/js/utils.js?v=8"></script>
+    <script src="/js/map.js?v=8"></script>
+    <script src="/js/payment-per-pin.js?v=8"></script>
+    <script src="/js/user.js?v=8"></script>
     <script>
       // Clear any auto-filled values from form fields
       function clearAutoFilledFields() {
@@ -1067,6 +1068,91 @@
         }
       }
 
+      // Get payment methods for a currency
+      function getPaymentMethods(currencyCode) {
+        const methods = {
+          'PHP': {
+            simple: 'GCash • Maya • GrabPay • Cards',
+            detailed: [
+              { text: 'GCash', color: '#007aff', emoji: '💙' },
+              { text: 'Maya', color: '#00d632', emoji: '💚' },
+              { text: 'GrabPay', color: '#00b14f', emoji: '🟢' },
+              { text: 'Cards', color: '#6c757d', emoji: '💳' }
+            ]
+          },
+          'MYR': {
+            simple: 'GrabPay • FPX • Cards',
+            detailed: [
+              { text: 'GrabPay', color: '#00b14f', emoji: '🟢' },
+              { text: 'FPX', color: '#0066cc', emoji: '🏦' },
+              { text: 'Cards', color: '#6c757d', emoji: '💳' }
+            ]
+          },
+          'SGD': {
+            simple: 'PayNow • GrabPay • Cards',
+            detailed: [
+              { text: 'PayNow', color: '#d4145a', emoji: '💰' },
+              { text: 'GrabPay', color: '#00b14f', emoji: '🟢' },
+              { text: 'Cards', color: '#6c757d', emoji: '💳' }
+            ]
+          },
+          'THB': {
+            simple: 'PromptPay • Cards',
+            detailed: [
+              { text: 'PromptPay', color: '#1e3a8a', emoji: '🇹🇭' },
+              { text: 'Cards', color: '#6c757d', emoji: '💳' }
+            ]
+          },
+          'IDR': {
+            simple: 'GrabPay • OVO • DANA • Cards',
+            detailed: [
+              { text: 'GrabPay', color: '#00b14f', emoji: '🟢' },
+              { text: 'OVO', color: '#4c3fb1', emoji: '🔵' },
+              { text: 'DANA', color: '#118eed', emoji: '🟠' },
+              { text: 'Cards', color: '#6c757d', emoji: '💳' }
+            ]
+          },
+          'USD': {
+            simple: 'Cards & Global Payment Methods',
+            detailed: [
+              { text: 'Cards & Global Payment Methods', color: '#6c757d', emoji: '💳' }
+            ]
+          },
+          'VND': {
+            simple: 'Cards & Global Payment Methods',
+            detailed: [
+              { text: 'Cards & Global Payment Methods', color: '#6c757d', emoji: '💳' }
+            ]
+          },
+          'HKD': {
+            simple: 'Cards & Global Payment Methods',
+            detailed: [
+              { text: 'Cards & Global Payment Methods', color: '#6c757d', emoji: '💳' }
+            ]
+          }
+        };
+        return methods[currencyCode] || methods['USD'];
+      }
+
+      // Update payment methods display
+      function updatePaymentMethods(currencyCode) {
+        const methods = getPaymentMethods(currencyCode);
+        
+        // Update simple text version (map section)
+        const simpleElements = document.querySelectorAll('.dynamic-payment-methods');
+        simpleElements.forEach(el => {
+          el.textContent = methods.simple;
+        });
+        
+        // Update detailed version (payment form)
+        const detailedElement = document.getElementById('paymentMethodsList');
+        if (detailedElement) {
+          detailedElement.innerHTML = methods.detailed.map(method => 
+            `<span style="color: ${method.color}">${method.emoji} ${method.text}</span>`
+          ).join('');
+        }
+      }
+
       // Update currency throughout the home page when user selects
       function updateHomeCurrency() {
         const currencyCode = document.getElementById("homeCurrencySelect")?.value || 'PHP';
@@ -1089,6 +1175,9 @@
         if (currencySelect) {
           currencySelect.value = currencyCode;
         }
+        
+        // Update payment methods
+        updatePaymentMethods(currencyCode);
         
         // Save preference
         saveCurrencyPreference(currencyCode);
