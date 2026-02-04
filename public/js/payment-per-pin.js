@@ -2,6 +2,17 @@
 
 let currentPinData = null;
 let paymentReferenceNumber = null;
+let stripe = null; // Stripe.js instance
+let elements = null; // Stripe Elements instance
+
+// Initialize Stripe (will be loaded from CDN)
+function initializeStripe() {
+    if (window.Stripe && !stripe) {
+        // Use your publishable key - should be in environment variable
+        const publishableKey = 'pk_test_51QcBFHKqUPJoHJDCWHWfChNdz0wqzC1zjTTIZl0KKy2VUKxq9kj8aS5ZNhDqmU3q2D65xRpMcz72YHvIRDPP2kgB00jmDGvMJr';
+        stripe = Stripe(publishableKey);
+    }
+}
 
 // Update payment amount display when currency changes
 function updatePaymentAmount() {
@@ -137,21 +148,116 @@ async function proceedToGCashPayment() {
         const result = await response.json();
 
         if (result.success) {
-            // Store the payment reference for later use
-            sessionStorage.setItem('paymentReference', result.referenceNumber);
-            sessionStorage.setItem('paymentTimestamp', Date.now().toString());
+            // Check if this is a Payment Intents flow (LATAM currencies)
+            if (result.usePaymentIntents) {
+                // Handle Payment Intents flow
+                await handlePaymentIntents(result);
+            } else {
+                // Standard flow: open payment link in new window
+                // Store the payment reference for later use
+                sessionStorage.setItem('paymentReference', result.referenceNumber);
+                sessionStorage.setItem('paymentTimestamp', Date.now().toString());
 
-            // Clear the status message
-            showStatusInElement("paymentResult", "", "info");
+                // Clear the status message
+                showStatusInElement("paymentResult", "", "info");
 
-            // Open payment in a NEW WINDOW
-            window.open(result.paymentLink, '_blank', 'width=600,height=800');
+                // Open payment in a NEW WINDOW
+                window.open(result.paymentLink, '_blank', 'width=600,height=800');
+            }
         } else {
             showStatusInElement("paymentResult", `Error: ${result.error || 'Failed to create payment'}`, "error");
         }
     } catch (error) {
         console.error('Payment initiation error:', error);
         showStatusInElement("paymentResult", "Connection error. Please try again.", "error");
+    }
+}
+
+// Handle Payment Intents flow (LATAM currencies with local payment methods)
+async function handlePaymentIntents(paymentData) {
+    try {
+        // Initialize Stripe if not already done
+        if (!stripe) {
+            initializeStripe();
+        }
+
+        if (!stripe) {
+            throw new Error('Stripe not loaded. Please refresh the page.');
+        }
+
+        // Create Payment Element container if it doesn't exist
+        let paymentContainer = document.getElementById('paymentElementContainer');
+        if (!paymentContainer) {
+            paymentContainer = document.createElement('div');
+            paymentContainer.id = 'paymentElementContainer';
+            paymentContainer.style.margin = '20px 0';
+            paymentContainer.innerHTML = `
+                <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <h4 style="margin: 0 0 10px 0;">💳 Complete Your Payment</h4>
+                    <p style="margin: 0; font-size: 14px;">Choose your payment method below:</p>
+                </div>
+                <div id="payment-element"></div>
+                <button id="submit-payment" style="margin-top: 20px; width: 100%;">
+                    Complete Payment
+                </button>
+                <div id="payment-message" style="margin-top: 15px;"></div>
+            `;
+            
+            // Insert before the existing pay button
+            const payButton = document.getElementById('payButton');
+            if (payButton) {
+                payButton.style.display = 'none'; // Hide old pay button
+                payButton.parentElement.insertBefore(paymentContainer, payButton);
+            }
+        }
+
+        // Create Stripe Elements
+        const appearance = {
+            theme: 'stripe',
+            variables: {
+                colorPrimary: '#007bff',
+            }
+        };
+        
+        elements = stripe.elements({
+            clientSecret: paymentData.clientSecret,
+            appearance: appearance
+        });
+
+        // Create and mount the Payment Element
+        const paymentElement = elements.create('payment');
+        paymentElement.mount('#payment-element');
+
+        // Handle form submission
+        const submitButton = document.getElementById('submit-payment');
+        const messageContainer = document.getElementById('payment-message');
+
+        submitButton.addEventListener('click', async (e) => {
+            e.preventDefault();
+            submitButton.disabled = true;
+            submitButton.textContent = 'Processing...';
+            messageContainer.textContent = '';
+
+            const { error } = await stripe.confirmPayment({
+                elements,
+                confirmParams: {
+                    return_url: `${window.location.origin}/payment-success.html?pi=${paymentData.paymentIntentId}&pinId=${paymentData.pinId}`,
+                }
+            });
+
+            if (error) {
+                // Payment failed
+                messageContainer.textContent = error.message;
+                messageContainer.style.color = 'red';
+                submitButton.disabled = false;
+                submitButton.textContent = 'Complete Payment';
+            }
+            // If no error, user will be redirected to return_url
+        });
+
+    } catch (error) {
+        console.error('Payment Intents error:', error);
+        showStatusInElement("paymentResult", `Error: ${error.message}`, "error");
     }
 }
 
@@ -356,4 +462,11 @@ function showStatusInElement(elementId, message, type) {
     if (element) {
         element.innerHTML = `<div class="status ${type}">${message}</div>`;
     }
+}
+
+// Initialize Stripe when page loads
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeStripe);
+} else {
+    initializeStripe();
 }

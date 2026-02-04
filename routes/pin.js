@@ -10,6 +10,7 @@ const BulkCode = require('../models/BulkCode');
 const TrialCode = require('../models/TrialCode');
 // PayMongo removed - not in use
 const { createStripePayment, verifyStripePayment, handleStripeWebhook } = require('../services/stripeService');
+const { createPaymentIntent, retrievePaymentIntent } = require('../services/stripePaymentIntents');
 const { createXenditPayment, verifyXenditPayment, handleXenditWebhook } = require('../services/xenditService');
 const { getCurrency } = require('../config/currencies');
 
@@ -164,14 +165,17 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
         const paymentAmount = currencyInfo.price;
 
         // Payment gateway routing:
-        // Payment gateway routing:
         // 1. Xendit for SE Asia e-wallets (PHP, IDR, THB, MYR, SGD) - supports GCash directly
-        // 2. Stripe for other currencies (VND, USD, HKD)
+        // 2. Stripe Payment Intents for LATAM (MXN, BRL, COP, ARS) - supports OXXO, Pix, Boleto, PSE
+        // 3. Stripe Checkout for other currencies (VND, USD, HKD)
         let payment;
         let paymentGateway = 'xendit';
+        let usePaymentIntents = false;
 
-        // Currencies enabled in Xendit account
+        // Currencies enabled in Xendit account (Southeast Asia)
         const xenditCurrencies = ['PHP', 'IDR', 'THB', 'MYR', 'SGD'];
+        // LATAM currencies that need Payment Intents for local payment methods
+        const latamCurrencies = ['MXN', 'BRL', 'COP', 'ARS'];
 
         if (xenditCurrencies.includes(currencyInfo.code)) {
             // Use Xendit for SE Asia (e-wallets + local payment methods including GCash)
@@ -184,8 +188,29 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
                 successUrl,
                 customerPhone
             );
+        } else if (latamCurrencies.includes(currencyInfo.code)) {
+            // Use Stripe Payment Intents for LATAM (supports OXXO, Pix, Boleto, PSE, etc.)
+            paymentGateway = 'stripe-intents';
+            usePaymentIntents = true;
+            
+            const pinId = generatePinId(); // Generate pinId upfront for metadata
+            payment = await createPaymentIntent(
+                paymentAmount,
+                currencyInfo.code,
+                `PinMyPlace - GPS Pin for ${sanitizedLocationName}`,
+                {
+                    ...metadata,
+                    pinId, // Include for webhook processing
+                    gateway: 'stripe-intents'
+                },
+                null, // customerEmail - optional
+                successUrl
+            );
+            
+            // Store pinId for later use
+            metadata.pinId = pinId;
         } else {
-            // Use Stripe for international currencies (VND, USD, HKD, etc.)
+            // Use Stripe Checkout for international currencies (VND, USD, HKD, etc.)
             paymentGateway = 'stripe';
             payment = await createStripePayment(
                 paymentAmount,
@@ -204,10 +229,15 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
             });
         }
 
-        // Store external reference for Xendit, sessionId for Stripe
-        const storedPaymentReferenceId = paymentGateway === 'xendit'
-            ? (payment.referenceNumber || payment.chargeId)
-            : (payment.sessionId || payment.referenceNumber || payment.chargeId);
+        // Store external reference based on gateway
+        let storedPaymentReferenceId;
+        if (paymentGateway === 'xendit') {
+            storedPaymentReferenceId = payment.referenceNumber || payment.chargeId;
+        } else if (paymentGateway === 'stripe-intents') {
+            storedPaymentReferenceId = payment.paymentIntentId;
+        } else {
+            storedPaymentReferenceId = payment.sessionId || payment.referenceNumber || payment.chargeId;
+        }
 
         // Prepare drone data if provided
         const droneEnabled = req.body.droneEnabled === 'true' || req.body.droneEnabled === true;
@@ -229,7 +259,7 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
         // Store pin data temporarily in a "pending" pin record
         // This will be updated to "verified" after payment confirmation
         const pendingPin = new Pin({
-            pinId: generatePinId(),
+            pinId: metadata.pinId || generatePinId(),
             locationName: sanitizedLocationName,
             customerPhone,
             address: sanitizedAddress || '',
@@ -239,8 +269,8 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
             correctedLongitude: parseFloat(correctedLongitude),
             paymentAmount: paymentAmount,
             paymentMethod: currencyInfo.code,
-            // Store external reference for Xendit, sessionId for Stripe
             paymentReferenceId: storedPaymentReferenceId,
+            paymentProvider: paymentGateway,
             paymentStatus: 'pending',
             qrCode: generateQRCode(),
             droneEnabled,
@@ -249,26 +279,35 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
 
         await pendingPin.save();
 
-        res.json({
-            success: true,
-            paymentLink: payment.paymentLink,
-            // Return external reference for Xendit, sessionId for Stripe
-            referenceNumber: storedPaymentReferenceId,
-            amount: paymentAmount,
-            currency: currencyInfo.code,
-            currencySymbol: currencyInfo.symbol,
-            gateway: paymentGateway,
-            paymentMethod: payment.channelCode, // For Xendit (GCASH, OVO, etc.)
-            expiresIn: '24 hours' // Payment link expires after 24 hours
-        });
-    } catch (error) {
-        console.error('Payment initiation error:', error.message);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to initiate payment'
-        });
-    }
-});
+        // For Payment Intents, return client secret for frontend
+        if (usePaymentIntents) {
+            res.json({
+                success: true,
+                usePaymentIntents: true,
+                clientSecret: payment.clientSecret,
+                paymentIntentId: payment.paymentIntentId,
+                referenceNumber: storedPaymentReferenceId,
+                amount: paymentAmount,
+                currency: currencyInfo.code,
+                currencySymbol: currencyInfo.symbol,
+                gateway: paymentGateway,
+                pinId: pendingPin._id.toString(),
+                expiresIn: '24 hours'
+            });
+        } else {
+            // For regular payments, return payment link
+            res.json({
+                success: true,
+                paymentLink: payment.paymentLink,
+                referenceNumber: storedPaymentReferenceId,
+                amount: paymentAmount,
+                currency: currencyInfo.code,
+                currencySymbol: currencyInfo.symbol,
+                gateway: paymentGateway,
+                paymentMethod: payment.channelCode, // For Xendit (GCASH, OVO, etc.)
+                expiresIn: '24 hours' // Payment link expires after 24 hours
+            });
+        }
 
 // Create pin with payment (no login required) - with rate limiting
 router.post('/create-with-payment', verificationLimiter, async (req, res) => {
@@ -342,12 +381,27 @@ router.post('/create-with-payment', verificationLimiter, async (req, res) => {
         // Verify payment with appropriate gateway
         let paymentVerification;
         const xenditCurrencies = ['PHP', 'IDR', 'THB', 'MYR', 'SGD'];
+        const latamCurrencies = ['MXN', 'BRL', 'COP', 'ARS'];
 
         if (xenditCurrencies.includes(pin.paymentMethod)) {
             // SE Asia currencies use Xendit - use the stored invoice or external ID
             paymentVerification = xenditFallbackVerification || await verifyXenditPayment(pin.paymentReferenceId);
+        } else if (latamCurrencies.includes(pin.paymentMethod) || pin.paymentProvider === 'stripe-intents') {
+            // LATAM currencies use Stripe Payment Intents
+            const intentResult = await retrievePaymentIntent(pin.paymentReferenceId);
+            if (intentResult.success) {
+                paymentVerification = {
+                    success: true,
+                    isPaid: intentResult.paymentIntent.status === 'succeeded',
+                    status: intentResult.paymentIntent.status,
+                    amount: intentResult.paymentIntent.amount / 100,
+                    currency: intentResult.paymentIntent.currency
+                };
+            } else {
+                paymentVerification = { success: false, isPaid: false };
+            }
         } else {
-            // International currencies use Stripe - use the stored session ID
+            // International currencies use Stripe Checkout - use the stored session ID
             paymentVerification = await verifyStripePayment(pin.paymentReferenceId);
         }
 

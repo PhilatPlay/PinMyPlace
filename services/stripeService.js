@@ -11,7 +11,13 @@ const STRIPE_CURRENCY_MAP = {
     'THB': 'thb',
     'IDR': 'idr',
     'VND': 'vnd',
-    'USD': 'usd'
+    'USD': 'usd',
+    'HKD': 'hkd',
+    // Latin America
+    'MXN': 'mxn',
+    'BRL': 'brl',
+    'COP': 'cop',
+    'ARS': 'ars'
 };
 
 /**
@@ -55,7 +61,10 @@ async function createStripePayment(amount, currency, description, metadata = {},
         } else if (currency === 'IDR') {
             paymentMethods.push('grabpay'); // Available in Indonesia too
         }
-
+        // Latin America - Cards only for now
+        // OXXO, Pix, Boleto, PSE require Payment Intents API, not available in Checkout Sessions
+        // Will implement when switching to Payment Intents
+        
         // Create Stripe Checkout Session
         const session = await stripe.checkout.sessions.create({
             payment_method_types: paymentMethods,

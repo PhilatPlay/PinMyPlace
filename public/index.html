@@ -45,6 +45,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
 
     <!-- Structured Data (Schema.org) -->
     <script type="application/ld+json">
@@ -105,14 +106,18 @@
             <div style="flex: 1; min-width: 200px;">
               <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px;">💱 Select Currency:</label>
               <select id="homeCurrencySelect" onchange="updateHomeCurrency()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd; width: 100%; font-size: 14px;">
-                <option value="PHP">🇵🇭 Philippine Peso (₱)</option>
-                <option value="MYR">🇲🇾 Malaysian Ringgit (RM)</option>
-                <option value="SGD">🇸🇬 Singapore Dollar (S$)</option>
-                <option value="THB">🇹🇭 Thai Baht (฿)</option>
-                <option value="IDR">🇮🇩 Indonesian Rupiah (Rp)</option>
-                <option value="VND">🇻🇳 Vietnamese Dong (₫)</option>
-                <option value="HKD">🇭🇰 Hong Kong Dollar (HK$)</option>
-                <option value="USD">🌏 US Dollar ($)</option>
+                <option value="PHP">🇵🇭 Philippine Peso (₱150)</option>
+                <option value="MYR">🇲🇾 Malaysian Ringgit (RM15)</option>
+                <option value="SGD">🇸🇬 Singapore Dollar (S$4.5)</option>
+                <option value="THB">🇹🇭 Thai Baht (฿105)</option>
+                <option value="IDR">🇮🇩 Indonesian Rupiah (Rp48,000)</option>
+                <option value="VND">🇻🇳 Vietnamese Dong (₫75,000)</option>
+                <option value="HKD">🇭🇰 Hong Kong Dollar (HK$24)</option>
+                <option value="USD">🌏 US Dollar ($3)</option>
+                <option value="MXN">🇲🇽 Mexican Peso (MX$55)</option>
+                <option value="BRL">🇧🇷 Brazilian Real (R$15)</option>
+                <option value="COP">🇨🇴 Colombian Peso (COL$12,500)</option>
+                <option value="ARS">🇦🇷 Argentine Peso (ARS$3,000)</option>
               </select>
             </div>
             <div style="font-size: 13px; color: #666; flex: 1; min-width: 200px;">
@@ -332,7 +337,7 @@
                 class="register-btn"
                 style="background: #28a745 !important"
               >
-                💰 Next: Pay <span class="dynamic-price">₱100</span> & Get QR
+                💰 Next: Pay <span class="dynamic-price">₱150</span> & Get QR
                 Code →
               </button>
 
@@ -391,13 +396,18 @@
                 font-size: 16px;
               "
             >
-              <option value="PHP">🇵🇭 Philippine Peso (₱100)</option>
+              <option value="PHP">🇵🇭 Philippine Peso (₱150)</option>
               <option value="MYR">🇲🇾 Malaysian Ringgit (RM15)</option>
               <option value="SGD">🇸🇬 Singapore Dollar (S$4.5)</option>
               <option value="THB">🇹🇭 Thai Baht (฿105)</option>
               <option value="IDR">🇮🇩 Indonesian Rupiah (Rp48,000)</option>
               <option value="VND">🇻🇳 Vietnamese Dong (₫75,000)</option>
+              <option value="HKD">🇭🇰 Hong Kong Dollar (HK$24)</option>
               <option value="USD">🌏 US Dollar ($3)</option>
+              <option value="MXN">🇲🇽 Mexican Peso (MX$55)</option>
+              <option value="BRL">🇧🇷 Brazilian Real (R$15)</option>
+              <option value="COP">🇨🇴 Colombian Peso (COL$12,500)</option>
+              <option value="ARS">🇦🇷 Argentine Peso (ARS$3,000)</option>
             </select>
             <small style="color: #666">
               Select your preferred currency (prices are equivalent to ~$3 USD)
@@ -479,7 +489,7 @@
             disabled
             style="opacity: 0.5; cursor: not-allowed"
           >
-            💰 Pay <span id="paymentAmount">₱100</span> Now
+            💰 Pay <span id="paymentAmount">₱150</span> Now
           </button>
 
           <div
@@ -978,10 +988,10 @@
     </div>
 
     <!-- Application JavaScript -->
-    <script src="/js/utils.js?v=13"></script>
-    <script src="/js/map.js?v=13"></script>
-    <script src="/js/payment-per-pin.js?v=13"></script>
-    <script src="/js/user.js?v=13"></script>
+    <script src="/js/utils.js?v=19"></script>
+    <script src="/js/map.js?v=19"></script>
+    <script src="/js/payment-per-pin.js?v=19"></script>
+    <script src="/js/user.js?v=19"></script>
     <script>
       // Clear any auto-filled values from form fields
       function clearAutoFilledFields() {
@@ -1137,6 +1147,37 @@
             detailed: [
               { text: 'Cards & Global Payment Methods', color: '#6c757d', emoji: '💳' }
             ]
+          },
+          // Latin America - Full local payment support via Payment Intents
+          'MXN': {
+            text: 'OXXO, Credit/Debit Cards',
+            simple: 'OXXO • Cards',
+            detailed: [
+              { text: 'OXXO', color: '#ed1c24', emoji: '🏪' },
+              { text: 'Cards', color: '#6c757d', emoji: '💳' }
+            ]
+          },
+          'BRL': {
+            text: 'Boleto, Credit/Debit Cards',
+            simple: 'Boleto • Cards',
+            detailed: [
+              { text: 'Boleto', color: '#009ddb', emoji: '🎫' },
+              { text: 'Cards', color: '#6c757d', emoji: '💳' }
+            ]
+          },
+          'COP': {
+            text: 'Credit/Debit Cards',
+            simple: 'Cards',
+            detailed: [
+              { text: 'Cards', color: '#6c757d', emoji: '💳' }
+            ]
+          },
+          'ARS': {
+            text: 'Credit/Debit Cards',
+            simple: 'Cards',
+            detailed: [
+              { text: 'Cards', color: '#6c757d', emoji: '💳' }
+            ]
           }
         };
         return methods[currencyCode] || methods['USD'];
@@ -1175,24 +1216,39 @@
       // Update currency throughout the home page when user selects
       function updateHomeCurrency() {
         const currencyCode = document.getElementById("homeCurrencySelect")?.value || 'PHP';
+        console.log(`🔄 updateHomeCurrency called with: ${currencyCode}`);
+        
         const currencyInfo = getCurrencyInfo(currencyCode);
+        console.log(`📊 Currency info retrieved:`, currencyInfo);
+        
+        if (!currencyInfo) {
+          console.error(`❌ Failed to get currency info for: ${currencyCode}`);
+          return;
+        }
+        
+        const formattedPrice = `${currencyInfo.symbol}${currencyInfo.price.toLocaleString()}`;
+        console.log(`💵 Formatted price: ${formattedPrice}`);
         
         // Update all dynamic-price elements (How It Works section, buttons)
         const priceElements = document.querySelectorAll('.dynamic-price');
+        console.log(`Found ${priceElements.length} price elements to update`);
         priceElements.forEach(el => {
-          el.textContent = `${currencyInfo.symbol}${currencyInfo.price.toLocaleString()}`;
+          el.textContent = formattedPrice;
+          console.log(`Updated price element:`, el);
         });
         
         // Update payment amount in Step 2 button
         const paymentAmount = document.getElementById('paymentAmount');
         if (paymentAmount) {
-          paymentAmount.textContent = `${currencyInfo.symbol}${currencyInfo.price.toLocaleString()}`;
+          paymentAmount.textContent = formattedPrice;
+          console.log(`Updated payment amount: ${formattedPrice}`);
         }
         
         // Update currency select in payment section (Step 2) if it exists
         const currencySelect = document.getElementById('currencySelect');
         if (currencySelect) {
           currencySelect.value = currencyCode;
+          console.log(`Updated payment section currency select to: ${currencyCode}`);
         }
         
         // Update payment methods
@@ -1201,7 +1257,7 @@
         // Save preference
         saveCurrencyPreference(currencyCode);
         
-        console.log(`💰 Home currency updated to: ${currencyCode}`);
+        console.log(`✅ Home currency fully updated to: ${currencyCode} (${formattedPrice})`);
       }
 
       // Initialize home page currency on load

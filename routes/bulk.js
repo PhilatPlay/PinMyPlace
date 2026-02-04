@@ -95,13 +95,13 @@ router.post('/purchase', bulkPurchaseLimiter, async (req, res) => {
         };
 
         // Payment gateway routing:
-        // 1. Xendit for SE Asia e-wallets (PHP, IDR, THB, MYR, SGD, VND) - supports GCash
-        // 2. Stripe for international currencies (USD, HKD, etc.)
+        // 1. Xendit for SE Asia e-wallets (PHP, IDR, THB, MYR, SGD) - supports GCash
+        // 2. Stripe for international and LATAM currencies (USD, HKD, VND, MXN, BRL, COP, ARS, etc.)
         let paymentResult;
         let paymentGateway;
 
-        // Currencies supported by Xendit
-        const xenditCurrencies = ['PHP', 'IDR', 'THB', 'MYR', 'SGD', 'VND'];
+        // Currencies supported by Xendit (Southeast Asia only)
+        const xenditCurrencies = ['PHP', 'IDR', 'THB', 'MYR', 'SGD'];
 
         if (xenditCurrencies.includes(currencyInfo.code)) {
             // Use Xendit for SE Asia (e-wallets + local payment methods)
@@ -115,7 +115,7 @@ router.post('/purchase', bulkPurchaseLimiter, async (req, res) => {
                 cleanPhone
             );
         } else {
-            // Use Stripe for international currencies (USD, HKD, etc.)
+            // Use Stripe for international and LATAM currencies (USD, HKD, VND, MXN, BRL, COP, ARS, etc.)
             paymentGateway = 'stripe';
             paymentResult = await createStripePayment(
                 totalAmount,

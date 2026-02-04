@@ -76,6 +76,43 @@ const CURRENCIES = {
         country: 'Hong Kong',
         flag: '🇭🇰',
         exchangeRate: 8  // 1 USD = 8 HKD
+    },
+    // Latin America
+    MXN: {
+        code: 'MXN',
+        symbol: 'MX$',
+        name: 'Mexican Peso',
+        price: 55,
+        country: 'Mexico',
+        flag: '🇲🇽',
+        exchangeRate: 18  // 1 USD = 18 MXN
+    },
+    BRL: {
+        code: 'BRL',
+        symbol: 'R$',
+        name: 'Brazilian Real',
+        price: 15,
+        country: 'Brazil',
+        flag: '🇧🇷',
+        exchangeRate: 5  // 1 USD = 5 BRL
+    },
+    COP: {
+        code: 'COP',
+        symbol: 'COL$',
+        name: 'Colombian Peso',
+        price: 12500,
+        country: 'Colombia',
+        flag: '🇨🇴',
+        exchangeRate: 4200  // 1 USD = 4,200 COP
+    },
+    ARS: {
+        code: 'ARS',
+        symbol: 'ARS$',
+        name: 'Argentine Peso',
+        price: 3000,
+        country: 'Argentina',
+        flag: '🇦🇷',
+        exchangeRate: 1000  // 1 USD = 1,000 ARS (volatile)
     }
 };
 
@@ -87,7 +124,11 @@ function getCurrencyByCountry(countryCode) {
         'SG': 'SGD',
         'TH': 'THB',
         'ID': 'IDR',
-        'VN': 'VND'
+        'VN': 'VND',
+        'MX': 'MXN',
+        'BR': 'BRL',
+        'CO': 'COP',
+        'AR': 'ARS'
     };
 
     return CURRENCIES[currencyMap[countryCode]] || CURRENCIES.PHP;

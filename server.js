@@ -65,7 +65,54 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Middleware
+// Stripe webhook needs raw body - must be BEFORE express.json()
+const stripePaymentIntents = require('./services/stripePaymentIntents');
+const Pin = require('./models/Pin');
+
+app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+    const signature = req.headers['stripe-signature'];
+    
+    try {
+        // Verify webhook signature
+        const verification = stripePaymentIntents.verifyWebhookSignature(req.body, signature);
+        
+        if (!verification.success) {
+            console.error('❌ Webhook signature verification failed:', verification.error);
+            return res.status(400).send(`Webhook Error: ${verification.error}`);
+        }
+        
+        const event = verification.event;
+        console.log(`📨 Received Stripe webhook: ${event.type}`);
+        
+        // Handle the event
+        const result = await stripePaymentIntents.handlePaymentIntentWebhook(event);
+        
+        // Update pin payment status based on webhook
+        if (result.success && result.metadata) {
+            const { pinId, referenceNumber } = result.metadata;
+            
+            if (pinId && result.status === 'succeeded') {
+                try {
+                    await Pin.findByIdAndUpdate(pinId, {
+                        paymentStatus: 'verified',
+                        paymentProvider: 'stripe',
+                        stripePaymentIntentId: result.paymentIntentId
+                    });
+                    console.log(`✅ Pin ${pinId} payment verified via webhook`);
+                } catch (error) {
+                    console.error('Error updating pin from webhook:', error);
+                }
+            }
+        }
+        
+        res.json({ received: true });
+    } catch (error) {
+        console.error('❌ Webhook handling error:', error);
+        res.status(400).send(`Webhook Error: ${error.message}`);
+    }
+});
+
+// Middleware (regular JSON parsing for all other routes)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 

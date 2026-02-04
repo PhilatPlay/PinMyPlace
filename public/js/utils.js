@@ -9,7 +9,12 @@ const CURRENCIES = {
     IDR: { code: 'IDR', symbol: 'Rp', price: 48000, name: 'Indonesian Rupiah', country: 'Indonesia', flag: '🇮🇩' },
     VND: { code: 'VND', symbol: '₫', price: 75000, name: 'Vietnamese Dong', country: 'Vietnam', flag: '🇻🇳' },
     USD: { code: 'USD', symbol: '$', price: 3, name: 'US Dollar', country: 'International', flag: '🌏' },
-    HKD: { code: 'HKD', symbol: 'HK$', price: 24, name: 'Hong Kong Dollar', country: 'Hong Kong', flag: '🇭🇰' }
+    HKD: { code: 'HKD', symbol: 'HK$', price: 24, name: 'Hong Kong Dollar', country: 'Hong Kong', flag: '🇭🇰' },
+    // Latin America
+    MXN: { code: 'MXN', symbol: 'MX$', price: 55, name: 'Mexican Peso', country: 'Mexico', flag: '🇲🇽' },
+    BRL: { code: 'BRL', symbol: 'R$', price: 15, name: 'Brazilian Real', country: 'Brazil', flag: '🇧🇷' },
+    COP: { code: 'COP', symbol: 'COL$', price: 12500, name: 'Colombian Peso', country: 'Colombia', flag: '🇨🇴' },
+    ARS: { code: 'ARS', symbol: 'ARS$', price: 3000, name: 'Argentine Peso', country: 'Argentina', flag: '🇦🇷' }
 };
 
 // Get saved currency preference
