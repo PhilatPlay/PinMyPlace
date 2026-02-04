@@ -134,7 +134,7 @@
             </li>
             <li>
               <strong>Pay <span class="dynamic-price">₱150</span></strong> -
-              GCash, Maya, GrabPay, or Card
+              <span class="dynamic-payment-methods-text">GCash, Maya, GrabPay, or Card</span>
             </li>
             <li>
               <strong>Get Your QR Code</strong> - Share with delivery services
@@ -978,10 +978,10 @@
     </div>
 
     <!-- Application JavaScript -->
-    <script src="/js/utils.js?v=8"></script>
-    <script src="/js/map.js?v=8"></script>
-    <script src="/js/payment-per-pin.js?v=8"></script>
-    <script src="/js/user.js?v=8"></script>
+    <script src="/js/utils.js?v=13"></script>
+    <script src="/js/map.js?v=13"></script>
+    <script src="/js/payment-per-pin.js?v=13"></script>
+    <script src="/js/user.js?v=13"></script>
     <script>
       // Clear any auto-filled values from form fields
       function clearAutoFilledFields() {
@@ -1072,6 +1072,7 @@
       function getPaymentMethods(currencyCode) {
         const methods = {
           'PHP': {
+            text: 'GCash, Maya, GrabPay, or Card',
             simple: 'GCash • Maya • GrabPay • Cards',
             detailed: [
               { text: 'GCash', color: '#007aff', emoji: '💙' },
@@ -1081,6 +1082,7 @@
             ]
           },
           'MYR': {
+            text: 'GrabPay, FPX, or Card',
             simple: 'GrabPay • FPX • Cards',
             detailed: [
               { text: 'GrabPay', color: '#00b14f', emoji: '🟢' },
@@ -1089,6 +1091,7 @@
             ]
           },
           'SGD': {
+            text: 'PayNow, GrabPay, or Card',
             simple: 'PayNow • GrabPay • Cards',
             detailed: [
               { text: 'PayNow', color: '#d4145a', emoji: '💰' },
@@ -1097,6 +1100,7 @@
             ]
           },
           'THB': {
+            text: 'PromptPay or Card',
             simple: 'PromptPay • Cards',
             detailed: [
               { text: 'PromptPay', color: '#1e3a8a', emoji: '🇹🇭' },
@@ -1104,6 +1108,7 @@
             ]
           },
           'IDR': {
+            text: 'GrabPay, OVO, DANA, or Card',
             simple: 'GrabPay • OVO • DANA • Cards',
             detailed: [
               { text: 'GrabPay', color: '#00b14f', emoji: '🟢' },
@@ -1113,18 +1118,21 @@
             ]
           },
           'USD': {
+            text: 'Cards & Global Payment Methods',
             simple: 'Cards & Global Payment Methods',
             detailed: [
               { text: 'Cards & Global Payment Methods', color: '#6c757d', emoji: '💳' }
             ]
           },
           'VND': {
+            text: 'Cards & Global Payment Methods',
             simple: 'Cards & Global Payment Methods',
             detailed: [
               { text: 'Cards & Global Payment Methods', color: '#6c757d', emoji: '💳' }
             ]
           },
           'HKD': {
+            text: 'Cards & Global Payment Methods',
             simple: 'Cards & Global Payment Methods',
             detailed: [
               { text: 'Cards & Global Payment Methods', color: '#6c757d', emoji: '💳' }
@@ -1136,21 +1144,32 @@
 
       // Update payment methods display
       function updatePaymentMethods(currencyCode) {
+        console.log(`🔄 Updating payment methods for: ${currencyCode}`);
         const methods = getPaymentMethods(currencyCode);
         
-        // Update simple text version (map section)
+        // Update text version (How It Works section)
+        const textElements = document.querySelectorAll('.dynamic-payment-methods-text');
+        console.log(`Found ${textElements.length} text payment method elements`);
+        textElements.forEach(el => {
+          el.textContent = methods.text;
+        });
+        
+        // Update simple text version (map section - Accepts:)
         const simpleElements = document.querySelectorAll('.dynamic-payment-methods');
+        console.log(`Found ${simpleElements.length} simple payment method elements`);
         simpleElements.forEach(el => {
           el.textContent = methods.simple;
         });
         
         // Update detailed version (payment form)
         const detailedElement = document.getElementById('paymentMethodsList');
+        console.log(`Found detailed element:`, detailedElement);
         if (detailedElement) {
           detailedElement.innerHTML = methods.detailed.map(method => 
             `<span style="color: ${method.color}">${method.emoji} ${method.text}</span>`
           ).join('');
         }
+        console.log(`✅ Payment methods updated to: ${methods.simple}`);
       }
 
       // Update currency throughout the home page when user selects

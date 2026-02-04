@@ -70,17 +70,16 @@ function proceedToPayment() {
     document.getElementById("paymentSection").style.display = "block";
     document.getElementById("paymentRefNumber").textContent = paymentReferenceNumber;
 
-    // Get currency from home selector first, then saved preference, then auto-detect from coordinates
+    // Get currency from home selector first, then saved preference (based on user's location, not pin location)
     const homeCurrency = document.getElementById("homeCurrencySelect")?.value;
     const saved = getSavedCurrency();
-    const detectedFromCoords = detectCurrencyFromCoordinates(correctedPosition.lat, correctedPosition.lng);
-    const finalCurrency = homeCurrency || saved || detectedFromCoords;
+    const finalCurrency = homeCurrency || saved || 'PHP';
     
     const currencySelect = document.getElementById("currencySelect");
     if (currencySelect) {
         currencySelect.value = finalCurrency;
         updatePaymentAmount();
-        console.log(`💰 Currency ${homeCurrency ? 'from home selector' : saved ? 'loaded from preference' : 'auto-detected from map'}: ${finalCurrency}`);
+        console.log(`💰 Currency ${homeCurrency ? 'from home selector' : saved ? 'loaded from preference' : 'defaulted to PHP'}: ${finalCurrency}`);
     }
 
     // Scroll to payment section

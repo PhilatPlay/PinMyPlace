@@ -118,6 +118,10 @@ async function detectUserCurrency() {
                 if (typeof updatePaymentAmount === 'function') {
                     updatePaymentAmount();
                 }
+                // Update payment methods display
+                if (typeof updatePaymentMethods === 'function') {
+                    updatePaymentMethods(currency.code);
+                }
             }
 
             console.log(`✅ Currency detected: ${currency.code} (${currency.country})${override ? ' [OVERRIDE]' : ''}`);
