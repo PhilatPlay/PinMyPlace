@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Retrieve My Pins - dropLogik</title>
+    <link rel="stylesheet" href="/css/styles.css?v=20" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <style>
+      .retrieve-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 30px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .retrieve-form {
+        margin-bottom: 40px;
+      }
+
+      .phone-input-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .phone-input-group input {
+        flex: 1;
+        padding: 15px;
+        font-size: 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+      }
+
+      .retrieve-btn {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+
+      .retrieve-btn:hover {
+        transform: translateY(-2px);
+      }
+
+      .retrieve-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .pins-grid {
+        display: grid;
+        gap: 20px;
+        margin-top: 30px;
+      }
+
+      .pin-card {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        border: 2px solid #e0e0e0;
+      }
+
+      .pin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 15px;
+      }
+
+      .pin-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+      }
+
+      .pin-id {
+        font-size: 12px;
+        color: #666;
+        background: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+      }
+
+      .pin-details {
+        margin: 15px 0;
+        color: #555;
+        line-height: 1.6;
+      }
+
+      .pin-map {
+        width: 100%;
+        height: 200px;
+        border-radius: 8px;
+        margin: 15px 0;
+      }
+
+      .pin-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      .btn-secondary {
+        flex: 1;
+        padding: 10px;
+        background: white;
+        color: #667eea;
+        border: 2px solid #667eea;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+
+      .btn-secondary:hover {
+        background: #667eea;
+        color: white;
+      }
+
+      .status-message {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-weight: 500;
+      }
+
+      .status-error {
+        background: #fee;
+        color: #c33;
+        border: 1px solid #fcc;
+      }
+
+      .status-success {
+        background: #efe;
+        color: #3a3;
+        border: 1px solid #cfc;
+      }
+
+      .status-info {
+        background: #eef;
+        color: #33a;
+        border: 1px solid #ccf;
+      }
+
+      .no-pins {
+        text-align: center;
+        padding: 40px 20px;
+        color: #666;
+      }
+
+      .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .back-link:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="retrieve-container">
+      <a href="/" class="back-link">← Back to Home</a>
+
+      <h1 style="color: #333; margin-bottom: 10px">Retrieve My Pins</h1>
+      <p style="color: #666; margin-bottom: 30px">
+        Enter your phone number to view all your saved locations
+      </p>
+
+      <div class="retrieve-form">
+        <div class="phone-input-group">
+          <input
+            type="tel"
+            id="phoneInput"
+            placeholder="Enter your phone number (e.g., +639171234567)"
+            autocomplete="tel"
+          />
+        </div>
+        <button onclick="retrievePins()" class="retrieve-btn" id="retrieveBtn">
+          Retrieve My Pins
+        </button>
+      </div>
+
+      <div id="statusMessage"></div>
+      <div id="pinsContainer"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+      let retrievedPins = [];
+
+      function showStatus(message, type = 'info') {
+        const statusDiv = document.getElementById('statusMessage');
+        statusDiv.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
+        
+        if (type === 'error') {
+          setTimeout(() => {
+            statusDiv.innerHTML = '';
+          }, 5000);
+        }
+      }
+
+      async function retrievePins() {
+        const phone = document.getElementById('phoneInput').value.trim();
+        const btn = document.getElementById('retrieveBtn');
+
+        if (!phone) {
+          showStatus('Please enter your phone number', 'error');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Retrieving...';
+        showStatus('Searching for your pins...', 'info');
+
+        try {
+          const response = await fetch(`/api/pin/retrieve/${encodeURIComponent(phone)}`);
+          const data = await response.json();
+
+          if (!response.ok) {
+            showStatus(data.error || 'Failed to retrieve pins', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Retrieve My Pins';
+            return;
+          }
+
+          if (data.success && data.pins.length > 0) {
+            retrievedPins = data.pins;
+            showStatus(`Found ${data.count} pin${data.count > 1 ? 's' : ''}!`, 'success');
+            displayPins(data.pins);
+          }
+
+          btn.disabled = false;
+          btn.textContent = 'Retrieve My Pins';
+
+        } catch (error) {
+          console.error('Retrieval error:', error);
+          showStatus('Network error. Please check your connection and try again.', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Retrieve My Pins';
+        }
+      }
+
+      function displayPins(pins) {
+        const container = document.getElementById('pinsContainer');
+        
+        if (pins.length === 0) {
+          container.innerHTML = '<div class="no-pins">No pins found for this phone number</div>';
+          return;
+        }
+
+        container.innerHTML = '<div class="pins-grid">' + pins.map((pin, index) => {
+          const date = new Date(pin.createdAt).toLocaleDateString();
+          return `
+            <div class="pin-card" id="pin-card-${index}">
+              <div class="pin-header">
+                <h3 class="pin-title">${escapeHtml(pin.locationName)}</h3>
+                <span class="pin-id">${pin.pinId}</span>
+              </div>
+              
+              <div class="pin-details">
+                <strong>Address:</strong> ${escapeHtml(pin.address || 'Not provided')}<br>
+                <strong>Coordinates:</strong> ${pin.latitude}, ${pin.longitude}<br>
+                <strong>Created:</strong> ${date}<br>
+                <strong>Amount Paid:</strong> ${pin.currency} ${pin.paymentAmount}
+              </div>
+
+              <div id="map-${index}" class="pin-map"></div>
+              
+              <div id="qr-${index}" style="text-align: center; padding: 20px; background: white; border-radius: 8px; margin: 15px 0;"></div>
+
+              <div class="pin-actions">
+                <button class="btn-secondary" onclick="downloadPin(${index})">
+                  📥 Download Pin
+                </button>
+                <button class="btn-secondary" onclick="openInMaps(${pin.latitude}, ${pin.longitude})">
+                  🗺️ Open in Maps
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('') + '</div>';
+
+        // Initialize maps and QR codes after a short delay
+        setTimeout(() => {
+          pins.forEach((pin, index) => {
+            initializeMap(pin, index);
+            generateQRCode(pin, index);
+          });
+        }, 100);
+      }
+
+      function initializeMap(pin, index) {
+        const mapDiv = document.getElementById(`map-${index}`);
+        if (!mapDiv) return;
+
+        const map = L.map(`map-${index}`).setView([pin.latitude, pin.longitude], 15);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        L.marker([pin.latitude, pin.longitude])
+          .addTo(map)
+          .bindPopup(`<b>${escapeHtml(pin.locationName)}</b><br>${escapeHtml(pin.address || '')}`);
+      }
+
+      function generateQRCode(pin, index) {
+        const qrDiv = document.getElementById(`qr-${index}`);
+        if (!qrDiv) return;
+
+        qrDiv.innerHTML = ''; // Clear previous QR code
+        qrDiv.style.position = 'relative';
+        qrDiv.style.display = 'inline-block';
+        
+        new QRCode(qrDiv, {
+          text: pin.qrCode,
+          width: 200,
+          height: 200,
+          colorDark: '#0000ff', // Blue QR code
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.H
+        });
+
+        // Add logo overlay after QR renders
+        setTimeout(() => {
+          // The QRCode library creates a wrapper div, find it
+          const qrWrapper = qrDiv.querySelector('img') || qrDiv.querySelector('canvas');
+          if (!qrWrapper) return;
+          
+          // Make sure parent container is positioned
+          qrWrapper.parentElement.style.position = 'relative';
+          qrWrapper.parentElement.style.display = 'inline-block';
+          
+          const logoSize = 40; // 20% of 200px
+          const bgSize = logoSize + 6;
+          
+          // Create circular white background
+          const bgCircle = document.createElement('div');
+          bgCircle.style.position = 'absolute';
+          bgCircle.style.left = '50%';
+          bgCircle.style.top = '50%';
+          bgCircle.style.transform = 'translate(-50%, -50%)';
+          bgCircle.style.width = `${bgSize}px`;
+          bgCircle.style.height = `${bgSize}px`;
+          bgCircle.style.backgroundColor = '#ffffff';
+          bgCircle.style.borderRadius = '50%';
+          bgCircle.style.pointerEvents = 'none';
+          bgCircle.style.zIndex = '1';
+          qrWrapper.parentElement.appendChild(bgCircle);
+          
+          // Create logo on top
+          const logo = document.createElement('img');
+          logo.src = '/pics/for_qrcode.png';
+          logo.alt = 'dropLogik';
+          logo.style.position = 'absolute';
+          logo.style.left = '50%';
+          logo.style.top = '50%';
+          logo.style.transform = 'translate(-50%, -50%)';
+          logo.style.width = `${logoSize}px`;
+          logo.style.height = `${logoSize}px`;
+          logo.style.objectFit = 'contain';
+          logo.style.pointerEvents = 'none';
+          logo.style.zIndex = '2';
+          qrWrapper.parentElement.appendChild(logo);
+        }, 100);
+      }
+
+      async function downloadPin(index) {
+        const pin = retrievedPins[index];
+        const card = document.getElementById(`pin-card-${index}`);
+
+        if (!card) return;
+
+        try {
+          const canvas = await html2canvas(card, {
+            backgroundColor: '#ffffff',
+            scale: 2
+          });
+
+          const link = document.createElement('a');
+          link.download = `${pin.pinId}_${pin.locationName.replace(/\s+/g, '_')}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        } catch (error) {
+          console.error('Download error:', error);
+          alert('Failed to download pin. Please try again.');
+        }
+      }
+
+      function openInMaps(lat, lng) {
+        window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // Allow Enter key to submit
+      document.getElementById('phoneInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          retrievePins();
+        }
+      });
+    </script>
+  </body>
+</html>

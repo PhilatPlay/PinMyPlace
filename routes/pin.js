@@ -888,4 +888,70 @@ router.post('/webhook/mercadopago', async (req, res) => {
     }
 });
 
+// Rate limiter for pin retrieval
+const retrievalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // 10 retrieval attempts per IP
+    message: { success: false, error: 'Too many retrieval requests. Please try again in 15 minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Retrieve pins by phone number
+router.get('/retrieve/:phone', retrievalLimiter, async (req, res) => {
+    try {
+        const { phone } = req.params;
+
+        // Validate phone number
+        if (!isValidPhone(phone)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid phone number format'
+            });
+        }
+
+        // Normalize phone number (remove spaces, dashes, etc.)
+        const normalizedPhone = phone.replace(/[\s\-().]/g, '');
+
+        // Find all verified pins for this phone number
+        const pins = await Pin.find({
+            customerPhone: { $regex: new RegExp(normalizedPhone, 'i') },
+            paymentStatus: { $in: ['verified', 'code_redeemed'] }
+        })
+        .sort({ createdAt: -1 }) // Newest first
+        .select('pinId locationName address correctedLatitude correctedLongitude qrCode createdAt paymentAmount currency paymentStatus');
+
+        if (pins.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'No pins found for this phone number'
+            });
+        }
+
+        res.json({
+            success: true,
+            count: pins.length,
+            pins: pins.map(pin => ({
+                pinId: pin.pinId,
+                locationName: pin.locationName,
+                address: pin.address,
+                latitude: pin.correctedLatitude,
+                longitude: pin.correctedLongitude,
+                qrCode: pin.qrCode,
+                createdAt: pin.createdAt,
+                paymentAmount: pin.paymentAmount,
+                currency: pin.currency || 'PHP',
+                status: pin.paymentStatus
+            }))
+        });
+
+    } catch (error) {
+        console.error('Pin retrieval error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to retrieve pins. Please try again.'
+        });
+    }
+});
+
 module.exports = router;

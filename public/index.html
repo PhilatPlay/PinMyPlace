@@ -122,7 +122,8 @@
             </div>
             <div style="font-size: 13px; color: #666; flex: 1; min-width: 200px;">
               💡 Prices shown in your selected currency<br>
-              <a href="/bulk-purchase.html" style="color: #007bff; text-decoration: underline;">📦 Buy codes in bulk</a> - Get wholesale discounts!
+              <a href="/bulk-purchase.html" style="color: #007bff; text-decoration: underline;">📦 Buy codes in bulk</a> - Get wholesale discounts!<br>
+              <a href="/retrieve-pins.html" style="color: #667eea; text-decoration: underline;">📍 Retrieve my pins</a> - Find your saved locations
             </div>
           </div>
         </div>
@@ -1412,6 +1413,10 @@
         `;
 
         canvas.innerHTML = '';
+        canvas.style.position = 'relative';
+        canvas.style.width = '200px';
+        canvas.style.height = '200px';
+        
         if (!isNaN(lat) && !isNaN(lng)) {
           const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
           if (typeof renderQRCode === 'function') {
@@ -1425,6 +1430,39 @@
               colorLight: "#FFFFFF",
               correctLevel: QRCode.CorrectLevel.H
             });
+            
+            // Add logo overlay after QR renders
+            setTimeout(() => {
+              const logoSize = 40; // 20% of 200px
+              
+              // Create circular white background
+              const bgCircle = document.createElement('div');
+              bgCircle.style.position = 'absolute';
+              bgCircle.style.left = '50%';
+              bgCircle.style.top = '50%';
+              bgCircle.style.transform = 'translate(-50%, -50%)';
+              bgCircle.style.width = `${logoSize + 6}px`;
+              bgCircle.style.height = `${logoSize + 6}px`;
+              bgCircle.style.backgroundColor = '#ffffff';
+              bgCircle.style.borderRadius = '50%';
+              bgCircle.style.pointerEvents = 'none';
+              canvas.appendChild(bgCircle);
+              
+              // Create logo on top
+              const logo = document.createElement('img');
+              logo.className = 'qr-logo';
+              logo.src = '/pics/for_qrcode.png';
+              logo.alt = 'dropLogik';
+              logo.style.position = 'absolute';
+              logo.style.left = '50%';
+              logo.style.top = '50%';
+              logo.style.transform = 'translate(-50%, -50%)';
+              logo.style.width = `${logoSize}px`;
+              logo.style.height = `${logoSize}px`;
+              logo.style.objectFit = 'contain';
+              logo.style.pointerEvents = 'none';
+              canvas.appendChild(logo);
+            }, 100);
           }
           shareLink.value = mapUrl;
         } else {

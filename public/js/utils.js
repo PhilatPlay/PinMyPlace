@@ -247,11 +247,32 @@ function renderQRCode(qrElement, data) {
 
 function addQrLogoOverlay(qrElement, qrSize) {
     const existingLogo = qrElement.querySelector(".qr-logo");
+    const existingBg = qrElement.querySelector(".qr-logo-bg");
     if (existingLogo) {
         existingLogo.remove();
     }
+    if (existingBg) {
+        existingBg.remove();
+    }
 
     const logoSize = Math.round(qrSize * 0.20);
+    const bgSize = logoSize + 6;
+    
+    // Create circular white background
+    const bgCircle = document.createElement("div");
+    bgCircle.className = "qr-logo-bg";
+    bgCircle.style.position = "absolute";
+    bgCircle.style.left = "50%";
+    bgCircle.style.top = "50%";
+    bgCircle.style.transform = "translate(-50%, -50%)";
+    bgCircle.style.width = `${bgSize}px`;
+    bgCircle.style.height = `${bgSize}px`;
+    bgCircle.style.backgroundColor = "#ffffff";
+    bgCircle.style.borderRadius = "50%";
+    bgCircle.style.pointerEvents = "none";
+    qrElement.appendChild(bgCircle);
+    
+    // Create logo on top
     const logo = document.createElement("img");
     logo.className = "qr-logo";
     logo.src = "/pics/for_qrcode.png";
@@ -263,13 +284,7 @@ function addQrLogoOverlay(qrElement, qrSize) {
     logo.style.width = `${logoSize}px`;
     logo.style.height = `${logoSize}px`;
     logo.style.objectFit = "contain";
-    logo.style.objectPosition = "center";
-    logo.style.background = "#ffffff";
-    logo.style.padding = "1px";
-    logo.style.borderRadius = "4px";
-    logo.style.boxShadow = "0 0 0 1px #ffffff";
     logo.style.pointerEvents = "none";
-
     qrElement.appendChild(logo);
 }
 
@@ -302,6 +317,17 @@ async function downloadQR() {
                 const logoSize = Math.round(canvas.width * 0.22);
                 const x = (canvas.width - logoSize) / 2;
                 const y = (canvas.height - logoSize) / 2;
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const radius = logoSize / 2 + 3;
+                
+                // Draw white circular background for logo
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Draw logo on top
                 ctx.drawImage(logoImg, x, y, logoSize, logoSize);
             }
             link.href = canvas.toDataURL("image/png");
@@ -320,6 +346,17 @@ async function downloadQR() {
                 const logoSize = Math.round(canvas.width * 0.22);
                 const x = (canvas.width - logoSize) / 2;
                 const y = (canvas.height - logoSize) / 2;
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const radius = logoSize / 2 + 3;
+                
+                // Draw white circular background for logo
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Draw logo on top
                 ctx.drawImage(logoImg, x, y, logoSize, logoSize);
             }
             link.href = canvas.toDataURL("image/png");
