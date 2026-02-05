@@ -1,5 +1,6 @@
 const Stripe = require('stripe');
 
+// Same Stripe account as main, just using Payment Intents API for LATAM currencies
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const stripe = STRIPE_SECRET_KEY ? Stripe(STRIPE_SECRET_KEY) : null;
 
@@ -36,11 +37,11 @@ function getPaymentMethodTypes(currency) {
         'VND': ['card'],
         'HKD': ['card'],
         
-        // Latin America - Full local payment support via Payment Intents
-        'MXN': ['card', 'oxxo'], // OXXO (cash voucher)
-        'BRL': ['card', 'boleto'], // Boleto (cash voucher), Pix requires special setup
-        'COP': ['card'], // PSE requires additional verification
-        'ARS': ['card'], // Rapipago/Pago Fácil require additional setup
+        // Latin America - Cards only (OXXO/Boleto require regional Stripe account)
+        'MXN': ['card'],
+        'BRL': ['card'],
+        'COP': ['card'],
+        'ARS': ['card'],
         
         // Default
         'USD': ['card']
@@ -51,7 +52,7 @@ function getPaymentMethodTypes(currency) {
 
 /**
  * Create a Payment Intent for LATAM and SEA currencies
- * Supports local payment methods like OXXO, Boleto, Pix, etc.
+ * Cards only for LATAM (local methods require regional Stripe account)
  * 
  * @param {number} amount - Amount in currency's smallest unit (e.g., cents, centavos)
  * @param {string} currency - Currency code (MXN, BRL, COP, ARS, etc.)
@@ -185,9 +186,9 @@ function verifyWebhookSignature(payload, signature) {
             throw new Error('Stripe not configured');
         }
 
-        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET_TEST;
         if (!webhookSecret) {
-            throw new Error('STRIPE_WEBHOOK_SECRET not configured');
+            throw new Error('STRIPE_WEBHOOK_SECRET or STRIPE_WEBHOOK_SECRET_TEST not configured');
         }
 
         const event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);

@@ -106,7 +106,7 @@
     <script>
       // Get payment reference from URL or sessionStorage
       const urlParams = new URLSearchParams(window.location.search);
-      let paymentRefId = urlParams.get("ref") || urlParams.get("id");
+      let paymentRefId = urlParams.get("ref") || urlParams.get("id") || urlParams.get("pi"); // Payment Intent ID
 
       // If not in URL, check sessionStorage (we stored it before redirect)
       if (!paymentRefId) {

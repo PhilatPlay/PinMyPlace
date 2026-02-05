@@ -6,11 +6,12 @@ let stripe = null; // Stripe.js instance
 let elements = null; // Stripe Elements instance
 
 // Initialize Stripe (will be loaded from CDN)
-function initializeStripe() {
+function initializeStripe(publishableKey) {
     if (window.Stripe && !stripe) {
-        // Use your publishable key - should be in environment variable
-        const publishableKey = 'pk_test_51QcBFHKqUPJoHJDCWHWfChNdz0wqzC1zjTTIZl0KKy2VUKxq9kj8aS5ZNhDqmU3q2D65xRpMcz72YHvIRDPP2kgB00jmDGvMJr';
-        stripe = Stripe(publishableKey);
+        // Use key from backend to ensure it always matches
+        const key = publishableKey || 'pk_test_C5CV4vIyiohnxaCblQSThXmT00uOyWvAUL'; // Fallback
+        stripe = Stripe(key);
+        console.log('✅ Stripe initialized with key:', key.substring(0, 20) + '...');
     }
 }
 
@@ -147,24 +148,46 @@ async function proceedToGCashPayment() {
 
         const result = await response.json();
 
-        if (result.success) {
-            // Check if this is a Payment Intents flow (LATAM currencies)
-            if (result.usePaymentIntents) {
-                // Handle Payment Intents flow
-                await handlePaymentIntents(result);
-            } else {
-                // Standard flow: open payment link in new window
-                // Store the payment reference for later use
-                sessionStorage.setItem('paymentReference', result.referenceNumber);
-                sessionStorage.setItem('paymentTimestamp', Date.now().toString());
+        // DEBUG: Log the full response
+        console.log('🔍 Payment initiation response:', result);
+        console.log('Gateway:', result.gateway);
+        console.log('Client Secret exists:', !!result.clientSecret);
+        console.log('Payment Link exists:', !!result.paymentLink);
 
+        if (result.success) {
+            // Store the payment reference for later use
+            sessionStorage.setItem('paymentReference', result.referenceNumber);
+            sessionStorage.setItem('paymentTimestamp', Date.now().toString());
+
+            // Check if this is a Payment Intents flow (LATAM currencies - MXN, BRL, COP, ARS)
+            if (result.gateway === 'stripe-intent' && result.clientSecret) {
+                console.log('✅ Stripe Intent flow detected - calling handlePaymentIntents');
+                // Initialize Stripe with correct public key from backend
+                if (result.stripePublicKey) {
+                    initializeStripe(result.stripePublicKey);
+                }
+                // Clear status and show Payment Element for card payment
+                showStatusInElement("paymentResult", "", "info");
+                await handlePaymentIntents(result);
+            } else if (result.paymentLink) {
+                console.log('✅ External payment link flow');
+                // Standard flow: Xendit or Stripe Checkout with external payment link
                 // Clear the status message
                 showStatusInElement("paymentResult", "", "info");
 
                 // Open payment in a NEW WINDOW
                 window.open(result.paymentLink, '_blank', 'width=600,height=800');
+
+                // Show instructions
+                showStatusInElement("paymentResult", 
+                    `✅ Payment window opened! Complete your payment in the new window. This page will refresh when payment is confirmed.`, 
+                    "success");
+            } else {
+                console.error('❌ Invalid response - no clientSecret or paymentLink:', result);
+                showStatusInElement("paymentResult", "Invalid payment response. Please try again.", "error");
             }
         } else {
+            console.error('❌ Payment initiation failed:', result.error);
             showStatusInElement("paymentResult", `Error: ${result.error || 'Failed to create payment'}`, "error");
         }
     } catch (error) {
@@ -175,19 +198,32 @@ async function proceedToGCashPayment() {
 
 // Handle Payment Intents flow (LATAM currencies with local payment methods)
 async function handlePaymentIntents(paymentData) {
+    console.log('🔵 handlePaymentIntents called with data:', paymentData);
+    
     try {
         // Initialize Stripe if not already done
         if (!stripe) {
+            console.log('⚠️ Stripe not initialized, calling initializeStripe()');
             initializeStripe();
         }
 
         if (!stripe) {
+            console.error('❌ Stripe still not loaded after initialization');
             throw new Error('Stripe not loaded. Please refresh the page.');
         }
+        console.log('✅ Stripe is loaded and ready');
+
+        // Validate clientSecret
+        if (!paymentData.clientSecret) {
+            console.error('❌ No clientSecret in payment data:', paymentData);
+            throw new Error('Payment configuration error. Please try again.');
+        }
+        console.log('✅ Client secret exists:', paymentData.clientSecret.substring(0, 20) + '...');
 
         // Create Payment Element container if it doesn't exist
         let paymentContainer = document.getElementById('paymentElementContainer');
         if (!paymentContainer) {
+            console.log('📝 Creating payment element container');
             paymentContainer = document.createElement('div');
             paymentContainer.id = 'paymentElementContainer';
             paymentContainer.style.margin = '20px 0';
@@ -196,7 +232,7 @@ async function handlePaymentIntents(paymentData) {
                     <h4 style="margin: 0 0 10px 0;">💳 Complete Your Payment</h4>
                     <p style="margin: 0; font-size: 14px;">Choose your payment method below:</p>
                 </div>
-                <div id="payment-element"></div>
+                <div id="payment-element" style="min-height: 100px;"></div>
                 <button id="submit-payment" style="margin-top: 20px; width: 100%;">
                     Complete Payment
                 </button>
@@ -208,10 +244,16 @@ async function handlePaymentIntents(paymentData) {
             if (payButton) {
                 payButton.style.display = 'none'; // Hide old pay button
                 payButton.parentElement.insertBefore(paymentContainer, payButton);
+                console.log('✅ Payment container inserted into DOM');
+            } else {
+                console.error('❌ Could not find payButton element');
             }
+        } else {
+            console.log('✅ Payment container already exists');
         }
 
         // Create Stripe Elements
+        console.log('🎨 Creating Stripe Elements...');
         const appearance = {
             theme: 'stripe',
             variables: {
@@ -223,10 +265,51 @@ async function handlePaymentIntents(paymentData) {
             clientSecret: paymentData.clientSecret,
             appearance: appearance
         });
+        console.log('✅ Stripe Elements created');
 
         // Create and mount the Payment Element
+        console.log('🔧 Creating Payment Element...');
         const paymentElement = elements.create('payment');
-        paymentElement.mount('#payment-element');
+        console.log('✅ Payment Element created, now mounting...');
+        
+        // Show loading indicator in the payment element container
+        const paymentElementDiv = document.getElementById('payment-element');
+        if (paymentElementDiv) {
+            paymentElementDiv.innerHTML = '<div style="text-align: center; padding: 30px; color: #666;">Loading payment form...</div>';
+        }
+        
+        // Mount the Payment Element (async operation)
+        try {
+            const mountResult = paymentElement.mount('#payment-element');
+            
+            // Check if mount() returns a Promise (it should, but let's be defensive)
+            if (mountResult && typeof mountResult.then === 'function') {
+                mountResult.then(() => {
+                    console.log('✅✅✅ Payment Element mounted successfully!');
+                }).catch((mountError) => {
+                    console.error('❌ Payment Element mount failed:', mountError);
+                    if (paymentElementDiv) {
+                        paymentElementDiv.innerHTML = `<div style="text-align: center; padding: 20px; color: #dc3545;">
+                            ❌ Failed to load payment form: ${mountError.message || 'Unknown error'}<br>
+                            <small>Please refresh and try again.</small>
+                        </div>`;
+                    }
+                    throw mountError;
+                });
+            } else {
+                // If mount() doesn't return a Promise, it mounted synchronously
+                console.log('✅ Payment Element mounted (synchronous)');
+            }
+        } catch (mountError) {
+            console.error('❌ Payment Element mount threw error:', mountError);
+            if (paymentElementDiv) {
+                paymentElementDiv.innerHTML = `<div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px;">
+                    <strong>Error loading payment form</strong><br>
+                    ${mountError.message || 'Please refresh the page and try again.'}
+                </div>`;
+            }
+            throw mountError;
+        }
 
         // Handle form submission
         const submitButton = document.getElementById('submit-payment');

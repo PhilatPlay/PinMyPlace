@@ -988,10 +988,10 @@
     </div>
 
     <!-- Application JavaScript -->
-    <script src="/js/utils.js?v=19"></script>
-    <script src="/js/map.js?v=19"></script>
-    <script src="/js/payment-per-pin.js?v=19"></script>
-    <script src="/js/user.js?v=19"></script>
+    <script src="/js/utils.js?v=20"></script>
+    <script src="/js/map.js?v=20"></script>
+    <script src="/js/payment-per-pin.js?v=20"></script>
+    <script src="/js/user.js?v=20"></script>
     <script>
       // Clear any auto-filled values from form fields
       function clearAutoFilledFields() {
@@ -1148,20 +1148,18 @@
               { text: 'Cards & Global Payment Methods', color: '#6c757d', emoji: '💳' }
             ]
           },
-          // Latin America - Full local payment support via Payment Intents
+          // Latin America - Cards only (local payment methods require Stripe regional approval)
           'MXN': {
-            text: 'OXXO, Credit/Debit Cards',
-            simple: 'OXXO • Cards',
+            text: 'Credit/Debit Cards',
+            simple: 'Cards',
             detailed: [
-              { text: 'OXXO', color: '#ed1c24', emoji: '🏪' },
               { text: 'Cards', color: '#6c757d', emoji: '💳' }
             ]
           },
           'BRL': {
-            text: 'Boleto, Credit/Debit Cards',
-            simple: 'Boleto • Cards',
+            text: 'Credit/Debit Cards',
+            simple: 'Cards',
             detailed: [
-              { text: 'Boleto', color: '#009ddb', emoji: '🎫' },
               { text: 'Cards', color: '#6c757d', emoji: '💳' }
             ]
           },

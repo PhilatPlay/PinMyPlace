@@ -1,3 +1,63 @@
+# Removed Files Log
+
+This file tracks intentionally removed files and how to restore them if needed.
+
+---
+
+## 📅 February 5, 2026 - Removed PayMongo Service
+
+### File Removed
+- `services/paymentService.js` (145 lines)
+
+### Reason
+- PayMongo integration was replaced with Xendit + Stripe
+- File was never imported or used anywhere in codebase
+- Routes had comment: "PayMongo removed - not in use"
+
+### What It Did
+- Created PayMongo payment links for GCash/Maya/GrabPay/Card
+- Verified payment status via PayMongo API
+- Handled PayMongo webhook events
+- Supported multi-currency payments
+
+### Current Replacement
+- **Philippines (PHP)**: Uses Xendit (`services/xenditService.js`)
+- **Other SE Asia**: Uses Xendit (`services/xenditService.js`)
+- **LATAM**: Uses Stripe Payment Intents (`services/stripePaymentIntents.js`)
+- **International**: Uses Stripe Checkout (`services/stripeService.js`)
+
+### How to Restore (if needed)
+
+**If you need PayMongo back:**
+
+1. **Restore the file**: Git revert or recreate from backup below
+2. **Add to routes/pin.js**:
+   ```javascript
+   const { createGCashPayment, verifyPayment } = require('../services/paymentService');
+   ```
+3. **Modify payment routing** (around line 178 in routes/pin.js):
+   ```javascript
+   if (currencyInfo.code === 'PHP') {
+       paymentGateway = 'paymongo';
+       payment = await createGCashPayment(
+           paymentAmount,
+           `PinMyPlace - GPS Pin for ${sanitizedLocationName}`,
+           metadata,
+           successUrl,
+           'PHP'
+       );
+   }
+   ```
+4. **Add environment variable**:
+   ```
+   PAYMONGO_SECRET_KEY=sk_test_xxxxxxxxxxxxx
+   ```
+
+---
+
+### File Backup (services/paymentService.js)
+
+```javascript
 const axios = require('axios');
 const { getCurrency } = require('../config/currencies');
 
@@ -141,3 +201,14 @@ module.exports = {
     verifyPayment,
     handleWebhook
 };
+```
+
+---
+
+### Testing After Removal
+
+✅ **Verified**: File was not imported anywhere in active code
+✅ **Payment flow**: Still uses Xendit (PHP) + Stripe (others)
+✅ **No breaking changes**: Application continues to work normally
+
+---

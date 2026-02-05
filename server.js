@@ -116,8 +116,20 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve static files (frontend)
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static files (frontend) with proper cache control
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: 0, // Force no cache - browsers must revalidate
+  etag: false, // Disable ETags
+  lastModified: false, // Disable Last-Modified
+  setHeaders: (res, path) => {
+    // Force no-cache for HTML and JS files
+    if (path.endsWith('.html') || path.endsWith('.js')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API Routes

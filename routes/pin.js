@@ -166,16 +166,14 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
 
         // Payment gateway routing:
         // 1. Xendit for SE Asia e-wallets (PHP, IDR, THB, MYR, SGD) - supports GCash directly
-        // 2. Stripe Payment Intents for LATAM (MXN, BRL, COP, ARS) - supports OXXO, Pix, Boleto, PSE
+        // 2. Stripe Payment Intents for LATAM (MXN, BRL, COP, ARS) - cards only
         // 3. Stripe Checkout for other currencies (VND, USD, HKD)
         let payment;
-        let paymentGateway = 'xendit';
-        let usePaymentIntents = false;
+        let paymentGateway;
 
-        // Currencies enabled in Xendit account (Southeast Asia)
-        const xenditCurrencies = ['PHP', 'IDR', 'THB', 'MYR', 'SGD'];
-        // LATAM currencies that need Payment Intents for local payment methods
-        const latamCurrencies = ['MXN', 'BRL', 'COP', 'ARS'];
+        // Currencies by payment processor
+        const xenditCurrencies = ['PHP', 'IDR', 'THB', 'MYR', 'SGD']; // Southeast Asia
+        const stripeIntentCurrencies = ['MXN', 'BRL', 'COP', 'ARS', 'VND', 'HKD']; // LATAM + Asia
 
         if (xenditCurrencies.includes(currencyInfo.code)) {
             // Use Xendit for SE Asia (e-wallets + local payment methods including GCash)
@@ -188,29 +186,17 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
                 successUrl,
                 customerPhone
             );
-        } else if (latamCurrencies.includes(currencyInfo.code)) {
-            // Use Stripe Payment Intents for LATAM (supports OXXO, Pix, Boleto, PSE, etc.)
-            paymentGateway = 'stripe-intents';
-            usePaymentIntents = true;
-            
-            const pinId = generatePinId(); // Generate pinId upfront for metadata
+        } else if (stripeIntentCurrencies.includes(currencyInfo.code)) {
+            // Use Stripe Payment Intents for LATAM and special currencies (cards only)
+            paymentGateway = 'stripe-intent';
             payment = await createPaymentIntent(
                 paymentAmount,
                 currencyInfo.code,
                 `PinMyPlace - GPS Pin for ${sanitizedLocationName}`,
-                {
-                    ...metadata,
-                    pinId, // Include for webhook processing
-                    gateway: 'stripe-intents'
-                },
-                null, // customerEmail - optional
-                successUrl
+                metadata
             );
-            
-            // Store pinId for later use
-            metadata.pinId = pinId;
         } else {
-            // Use Stripe Checkout for international currencies (VND, USD, HKD, etc.)
+            // Use Stripe Checkout for USD and other international currencies
             paymentGateway = 'stripe';
             payment = await createStripePayment(
                 paymentAmount,
@@ -233,10 +219,8 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
         let storedPaymentReferenceId;
         if (paymentGateway === 'xendit') {
             storedPaymentReferenceId = payment.referenceNumber || payment.chargeId;
-        } else if (paymentGateway === 'stripe-intents') {
-            storedPaymentReferenceId = payment.paymentIntentId;
         } else {
-            storedPaymentReferenceId = payment.sessionId || payment.referenceNumber || payment.chargeId;
+            storedPaymentReferenceId = payment.sessionId || payment.paymentIntentId || payment.referenceNumber || payment.chargeId;
         }
 
         // Prepare drone data if provided
@@ -279,35 +263,40 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
 
         await pendingPin.save();
 
-        // For Payment Intents, return client secret for frontend
-        if (usePaymentIntents) {
-            res.json({
-                success: true,
-                usePaymentIntents: true,
-                clientSecret: payment.clientSecret,
-                paymentIntentId: payment.paymentIntentId,
-                referenceNumber: storedPaymentReferenceId,
-                amount: paymentAmount,
-                currency: currencyInfo.code,
-                currencySymbol: currencyInfo.symbol,
-                gateway: paymentGateway,
-                pinId: pendingPin._id.toString(),
-                expiresIn: '24 hours'
-            });
+        // Build response based on payment gateway
+        const response = {
+            success: true,
+            referenceNumber: storedPaymentReferenceId,
+            amount: paymentAmount,
+            currency: currencyInfo.code,
+            currencySymbol: currencyInfo.symbol,
+            gateway: paymentGateway,
+            expiresIn: '24 hours'
+        };
+
+        // Add gateway-specific data
+        if (paymentGateway === 'stripe-intent') {
+            // Payment Intents: return client secret for embedded form
+            response.clientSecret = payment.clientSecret;
+            response.paymentIntentId = payment.paymentIntentId;
+            response.pinId = pendingPin.pinId;
+            response.stripePublicKey = process.env.STRIPE_PUBLIC_KEY; // Send correct public key
         } else {
-            // For regular payments, return payment link
-            res.json({
-                success: true,
-                paymentLink: payment.paymentLink,
-                referenceNumber: storedPaymentReferenceId,
-                amount: paymentAmount,
-                currency: currencyInfo.code,
-                currencySymbol: currencyInfo.symbol,
-                gateway: paymentGateway,
-                paymentMethod: payment.channelCode, // For Xendit (GCASH, OVO, etc.)
-                expiresIn: '24 hours' // Payment link expires after 24 hours
-            });
+            // Xendit or Stripe Checkout: return external payment link
+            response.paymentLink = payment.paymentLink;
+            response.paymentMethod = payment.channelCode; // For Xendit (GCASH, OVO, etc.)
         }
+
+        res.json(response);
+
+    } catch (error) {
+        console.error('Payment initiation error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to initiate payment'
+        });
+    }
+});
 
 // Create pin with payment (no login required) - with rate limiting
 router.post('/create-with-payment', verificationLimiter, async (req, res) => {
@@ -812,6 +801,90 @@ router.post('/create-with-trial', verificationLimiter, async (req, res) => {
             success: false,
             error: 'Failed to create pin with trial code'
         });
+    }
+});
+
+// Mercado Pago Webhook Handler (IPN - Instant Payment Notification)
+router.post('/webhook/mercadopago', async (req, res) => {
+    try {
+        console.log('📥 Mercado Pago webhook received:', req.body);
+
+        // Mercado Pago sends notifications for various events
+        // We're interested in "payment" type notifications
+        const { type, data } = req.body;
+
+        // Acknowledge receipt immediately (required by Mercado Pago)
+        res.status(200).send('OK');
+
+        // Only process payment notifications
+        if (type !== 'payment') {
+            console.log(`ℹ️ Ignoring non-payment notification type: ${type}`);
+            return;
+        }
+
+        // Get payment ID from notification
+        const paymentId = data?.id;
+        if (!paymentId) {
+            console.error('❌ No payment ID in webhook data');
+            return;
+        }
+
+        console.log(`🔍 Processing Mercado Pago payment: ${paymentId}`);
+
+        // Verify payment with Mercado Pago API
+        const verification = await verifyMercadoPagoPayment(paymentId);
+
+        if (!verification.success) {
+            console.error('❌ Failed to verify Mercado Pago payment:', verification.error);
+            return;
+        }
+
+        console.log(`✅ Payment verified:`, {
+            status: verification.status,
+            amount: verification.amount,
+            currency: verification.currency,
+            reference: verification.externalReference
+        });
+
+        // Only activate pin for approved payments
+        if (!verification.verified) {
+            console.log(`⏳ Payment ${paymentId} status: ${verification.status} - not activating pin yet`);
+            return;
+        }
+
+        // Find pending pin by external reference
+        const externalRef = verification.externalReference;
+        const pin = await Pin.findOne({
+            paymentReferenceId: externalRef,
+            paymentStatus: 'pending'
+        });
+
+        if (!pin) {
+            console.error(`❌ No pending pin found for reference: ${externalRef}`);
+            return;
+        }
+
+        // Update pin status to verified
+        pin.paymentStatus = 'verified';
+        pin.isActive = true;
+        pin.verifiedAt = new Date();
+        
+        // Store additional Mercado Pago payment details
+        pin.paymentDetails = {
+            paymentId: verification.paymentId,
+            paymentMethod: verification.paymentMethod,
+            paymentType: verification.paymentType,
+            status: verification.status,
+            payer: verification.payer
+        };
+
+        await pin.save();
+
+        console.log(`🎉 Pin ${pin.pinId} activated via Mercado Pago payment ${paymentId}`);
+
+    } catch (error) {
+        console.error('❌ Mercado Pago webhook error:', error);
+        // Don't throw - we already sent 200 OK response
     }
 });
 

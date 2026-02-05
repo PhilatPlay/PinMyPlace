@@ -35,9 +35,36 @@ npm install
 Edit `.env` file and update:
 
 ```
+# Database
 MONGODB_URI=mongodb://localhost:27017/pinmyplace
+
+# Security
 JWT_SECRET=your-unique-secret-key-here
+
+# Payment Gateways
+# Southeast Asia - Xendit (GCash, Maya, GrabPay, etc.)
+XENDIT_SECRET_KEY=your-xendit-secret-key
+
+# International - Stripe (Cards, Payment Intents for LATAM/Asia)
+STRIPE_SECRET_KEY=your-stripe-secret-key
+STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
+STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
 ```
+
+**Payment Gateway Setup:**
+
+1. **Xendit** (Southeast Asia)
+   - Sign up at https://dashboard.xendit.co/register
+   - Get API keys from Settings → Developers → API Keys
+   - Supports: PHP, IDR, THB, MYR, SGD
+   - Methods: GCash, Maya, GrabPay, OVO, DANA, FPX, PromptPay
+
+2. **Stripe** (International + LATAM)
+   - Sign up at https://dashboard.stripe.com/register
+   - Get keys from Developers → API keys
+   - Supports: USD, VND, HKD (Stripe Checkout), MXN, BRL, COP, ARS (Payment Intents - cards only)
+   - Methods: Cards, Apple Pay, Google Pay
+   - Note: LATAM payment methods (OXXO, Boleto) require regional Stripe account approval
 
 ### 4. Start the Server
 
