@@ -267,14 +267,17 @@
 
         // Initialize on page load
         window.addEventListener('load', function() {
-            // Try to get saved preference first, then auto-detect from locale
+            // Priority: URL param > saved preference > auto-detect from locale
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlCurrency = urlParams.get('currency');
             const saved = getSavedCurrency();
-            const detected = saved || detectCurrencyFromLocale();
+            const detected = urlCurrency || saved || detectCurrencyFromLocale();
             
             const currencySelect = document.getElementById('currencySelect');
             if (currencySelect && detected) {
                 currencySelect.value = detected;
-                console.log(`💰 Currency ${saved ? 'loaded from preference' : 'auto-detected'}: ${detected}`);
+                const source = urlCurrency ? 'from main page' : (saved ? 'loaded from preference' : 'auto-detected');
+                console.log(`💰 Currency ${source}: ${detected}`);
             }
             
             updateBulkPrice();

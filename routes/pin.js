@@ -240,6 +240,9 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
             notes: req.body.droneNotes || null
         } : undefined;
 
+        // Generate Google Maps URL for QR code
+        const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${correctedLatitude},${correctedLongitude}`;
+
         // Store pin data temporarily in a "pending" pin record
         // This will be updated to "verified" after payment confirmation
         const pendingPin = new Pin({
@@ -257,6 +260,7 @@ router.post('/initiate-payment', paymentLimiter, async (req, res) => {
             paymentProvider: paymentGateway,
             paymentStatus: 'pending',
             qrCode: generateQRCode(),
+            googleMapsUrl: googleMapsUrl,
             droneEnabled,
             droneData
         });
@@ -357,6 +361,7 @@ router.post('/create-with-payment', verificationLimiter, async (req, res) => {
                 pin: {
                     pinId: pin.pinId,
                     qrCode: pin.qrCode,
+                    googleMapsUrl: pin.googleMapsUrl,
                     locationName: pin.locationName,
                     address: pin.address,
                     correctedLatitude: pin.correctedLatitude,
@@ -426,6 +431,7 @@ router.post('/create-with-payment', verificationLimiter, async (req, res) => {
             pin: {
                 pinId: pin.pinId,
                 qrCode: pin.qrCode,
+                googleMapsUrl: pin.googleMapsUrl,
                 locationName: pin.locationName,
                 address: pin.address,
                 correctedLatitude: pin.correctedLatitude,
@@ -603,8 +609,8 @@ router.post('/create-with-code', verificationLimiter, async (req, res) => {
             });
         }
 
-        // Generate QR code URL
-        const qrUrl = `https://www.google.com/maps?q=${correctedLatitude},${correctedLongitude}`;
+        // Generate Google Maps URL for QR code
+        const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${correctedLatitude},${correctedLongitude}`;
 
         // Prepare drone data if provided
         const droneEnabled = req.body.droneEnabled === 'true' || req.body.droneEnabled === true;
@@ -638,8 +644,9 @@ router.post('/create-with-code', verificationLimiter, async (req, res) => {
             paymentReferenceId: `CODE-${accessCode}`,
             paymentStatus: 'code_redeemed',
             redeemedCode: accessCode.toUpperCase(),
+            googleMapsUrl: googleMapsUrl,
             redemptionMethod: 'bulk_code',
-            qrCode: qrUrl,
+            qrCode: generateQRCode(),
             isActive: true,
             droneEnabled,
             droneData
@@ -662,6 +669,7 @@ router.post('/create-with-code', verificationLimiter, async (req, res) => {
             pin: {
                 pinId: newPin.pinId,
                 qrCode: newPin.qrCode,
+                googleMapsUrl: newPin.googleMapsUrl,
                 locationName: newPin.locationName,
                 address: newPin.address,
                 correctedLatitude: newPin.correctedLatitude,
@@ -750,8 +758,8 @@ router.post('/create-with-trial', verificationLimiter, async (req, res) => {
             });
         }
 
-        // Generate QR code URL
-        const qrUrl = `https://www.google.com/maps?q=${correctedLatitude},${correctedLongitude}`;
+        // Generate Google Maps URL for QR code
+        const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${correctedLatitude},${correctedLongitude}`;
 
         // Create the pin
         const newPin = new Pin({
@@ -770,7 +778,8 @@ router.post('/create-with-trial', verificationLimiter, async (req, res) => {
             paymentStatus: 'code_redeemed',
             redeemedCode: trialCode.toUpperCase(),
             redemptionMethod: 'bulk_code', // Reuse existing field
-            qrCode: qrUrl,
+            qrCode: generateQRCode(),
+            googleMapsUrl: googleMapsUrl,
             isActive: true
         });
 
@@ -787,6 +796,7 @@ router.post('/create-with-trial', verificationLimiter, async (req, res) => {
             pin: {
                 pinId: newPin.pinId,
                 qrCode: newPin.qrCode,
+                googleMapsUrl: newPin.googleMapsUrl,
                 locationName: newPin.locationName,
                 address: newPin.address,
                 correctedLatitude: newPin.correctedLatitude,
@@ -919,7 +929,7 @@ router.get('/retrieve/:phone', retrievalLimiter, async (req, res) => {
             paymentStatus: { $in: ['verified', 'code_redeemed'] }
         })
         .sort({ createdAt: -1 }) // Newest first
-        .select('pinId locationName address correctedLatitude correctedLongitude qrCode createdAt paymentAmount currency paymentStatus');
+        .select('pinId locationName address correctedLatitude correctedLongitude qrCode googleMapsUrl createdAt paymentAmount currency paymentStatus');
 
         if (pins.length === 0) {
             return res.status(404).json({
@@ -938,6 +948,7 @@ router.get('/retrieve/:phone', retrievalLimiter, async (req, res) => {
                 latitude: pin.correctedLatitude,
                 longitude: pin.correctedLongitude,
                 qrCode: pin.qrCode,
+                googleMapsUrl: pin.googleMapsUrl,
                 createdAt: pin.createdAt,
                 paymentAmount: pin.paymentAmount,
                 currency: pin.currency || 'PHP',

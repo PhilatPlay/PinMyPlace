@@ -1,4 +1,4 @@
-const CACHE_NAME = 'droplogik-static-v6';
+const CACHE_NAME = 'droplogik-static-v7'; // Increment this with each deployment
 const CORE_ASSETS = [
   '/css/styles.css',
   '/js/utils.js',
@@ -60,4 +60,11 @@ self.addEventListener('fetch', event => {
         .catch(() => cached);
     })
   );
+});
+
+// Notify clients when a new service worker is waiting
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

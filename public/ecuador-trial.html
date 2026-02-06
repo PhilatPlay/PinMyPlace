@@ -343,8 +343,12 @@
         // Generate QR Code
         const qrContainer = document.getElementById('qrCodeContainer');
         qrContainer.innerHTML = '<div id="qrcode" style="position: relative; width: 256px; height: 256px;"></div>';
+        
+        // Use stored Google Maps URL from database
+        const qrText = pin.googleMapsUrl || `https://www.google.com/maps/dir/?api=1&destination=${pin.correctedLatitude},${pin.correctedLongitude}`;
+        
         new QRCode(document.getElementById('qrcode'), {
-          text: pin.qrCode,
+          text: qrText,
           width: 256,
           height: 256,
           colorDark: '#0000ff',

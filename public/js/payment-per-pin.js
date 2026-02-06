@@ -45,11 +45,16 @@ function proceedToPayment() {
         return;
     }
 
-    const locationName = document.getElementById("locationName")?.value;
+    const locationName = document.getElementById("locationName")?.value.trim();
     const address = document.getElementById("mapAddress")?.value;
 
     if (!locationName) {
         showStatus("Please enter a name for this location", "error");
+        return;
+    }
+
+    if (locationName.length < 3 || locationName.length > 100) {
+        showStatus("Location name must be between 3 and 100 characters", "error");
         return;
     }
 

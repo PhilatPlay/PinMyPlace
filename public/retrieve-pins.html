@@ -332,8 +332,11 @@
         qrDiv.style.position = 'relative';
         qrDiv.style.display = 'inline-block';
         
+        // Use stored Google Maps URL from database
+        const qrText = pin.googleMapsUrl || `https://www.google.com/maps/dir/?api=1&destination=${pin.latitude},${pin.longitude}`;
+        
         new QRCode(qrDiv, {
-          text: pin.qrCode,
+          text: qrText,
           width: 200,
           height: 200,
           colorDark: '#0000ff', // Blue QR code

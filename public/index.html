@@ -122,7 +122,7 @@
             </div>
             <div style="font-size: 13px; color: #666; flex: 1; min-width: 200px;">
               💡 Prices shown in your selected currency<br>
-              <a href="/bulk-purchase.html" style="color: #007bff; text-decoration: underline;">📦 Buy codes in bulk</a> - Get wholesale discounts!<br>
+              <a href="#" onclick="goToBulkPurchase(); return false;" style="color: #007bff; text-decoration: underline;">📦 Buy codes in bulk</a> - Get wholesale discounts!<br>
               <a href="/retrieve-pins.html" style="color: #667eea; text-decoration: underline;">📍 Retrieve my pins</a> - Find your saved locations
             </div>
           </div>
@@ -581,7 +581,7 @@
           </div>
 
           <div style="text-align: center; margin-top: 15px;">
-            <a href="/bulk-purchase.html" style="color: #007bff; text-decoration: underline; font-size: 14px;">
+            <a href="#" onclick="goToBulkPurchase(); return false;" style="color: #007bff; text-decoration: underline; font-size: 14px;">
               Don't have a code? Buy in bulk (10+ codes at ₱50-75 each)
             </a>
           </div>
@@ -820,7 +820,7 @@
             </p>
           </div>
 
-          <a href="/bulk-purchase.html" style="text-decoration: none;">
+          <a href="#" onclick="goToBulkPurchase(); return false;" style="text-decoration: none;">
             <button style="background: #28a745 !important; font-size: 16px; width: 100%;">
               🛒 Purchase Bulk Codes
             </button>
@@ -1259,6 +1259,12 @@
         console.log(`✅ Home currency fully updated to: ${currencyCode} (${formattedPrice})`);
       }
 
+      // Navigate to bulk purchase with selected currency
+      function goToBulkPurchase() {
+        const currency = document.getElementById('homeCurrencySelect')?.value || 'PHP';
+        window.location.href = `/bulk-purchase.html?currency=${currency}`;
+      }
+
       // Initialize home page currency on load
       function initializeHomeCurrency() {
         const saved = getSavedCurrency();
@@ -1335,6 +1341,11 @@
 
         if (!locationName) {
           alert('Please enter a location name');
+          return;
+        }
+
+        if (locationName.length < 3 || locationName.length > 100) {
+          alert('Location name must be between 3 and 100 characters');
           return;
         }
 
@@ -1418,7 +1429,8 @@
         canvas.style.height = '200px';
         
         if (!isNaN(lat) && !isNaN(lng)) {
-          const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+          // Use stored Google Maps URL from backend, or generate as fallback
+          const mapUrl = pin.googleMapsUrl || `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
           if (typeof renderQRCode === 'function') {
             renderQRCode(canvas, mapUrl);
           } else {
@@ -1561,6 +1573,66 @@
 
         // Scroll to QR section
         qrSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    </script>
+
+    <!-- Service Worker Update Detection -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        let refreshing = false;
+        
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New service worker available, show update prompt
+                showUpdateNotification(newWorker);
+              }
+            });
+          });
+        });
+
+        // Reload page when new service worker takes control
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
+
+        function showUpdateNotification(worker) {
+          const updateBanner = document.createElement('div');
+          updateBanner.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #0000ff;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            z-index: 99999;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+          `;
+          updateBanner.innerHTML = `
+            <strong>🔄 New version available!</strong>
+            <button onclick="this.parentElement.updateApp()" style="
+              background: white;
+              color: #0000ff;
+              border: none;
+              padding: 8px 20px;
+              margin-left: 15px;
+              border-radius: 4px;
+              cursor: pointer;
+              font-weight: bold;
+            ">Update Now</button>
+          `;
+          updateBanner.updateApp = () => {
+            worker.postMessage({ type: 'SKIP_WAITING' });
+          };
+          document.body.prepend(updateBanner);
+        }
       }
     </script>
   </body>
