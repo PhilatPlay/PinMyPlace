@@ -153,6 +153,126 @@
           <div id="map"></div>
         </div>
 
+        <!-- Drone Delivery Section (Optional) -->
+        <div class="card">
+          <div style="margin-bottom: 15px">
+            <label style="display: flex; align-items: center; cursor: pointer">
+              <input
+                type="checkbox"
+                id="droneEnabled"
+                style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer"
+                onchange="toggleDroneFields()"
+              />
+              <span>🚁 Enable Drone Delivery Data (Optional)</span>
+            </label>
+            <small style="color: #666; display: block; margin-top: 5px">
+              Prepare this location for future autonomous postal deliveries
+            </small>
+          </div>
+
+          <!-- Drone Delivery Fields (hidden by default) -->
+          <div id="droneFields" style="display: none; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6">
+            <h4 style="margin-top: 0; color: var(--ecuador-blue); font-size: 16px">🚁 Drone Delivery Details</h4>
+            
+            <div style="margin-bottom: 15px;">
+              <label>Landing Zone Type:</label>
+              <select id="landingZoneType" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ddd">
+                <option value="">-- Select --</option>
+                <option value="roof">Roof</option>
+                <option value="yard">Yard/Garden</option>
+                <option value="balcony">Balcony</option>
+                <option value="street">Street Level</option>
+                <option value="field">Open Field</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+              <label>Drop Zone Size (meters):</label>
+              <div style="display: flex; gap: 10px">
+                <input
+                  type="number"
+                  id="dropZoneWidth"
+                  placeholder="Width (m)"
+                  min="1"
+                  step="0.5"
+                  style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ddd"
+                />
+                <input
+                  type="number"
+                  id="dropZoneLength"
+                  placeholder="Length (m)"
+                  min="1"
+                  step="0.5"
+                  style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ddd"
+                />
+              </div>
+              <small style="color: #666">Minimum safe landing area dimensions</small>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+              <label>Height Above Ground:</label>
+              <div style="display: flex; gap: 10px">
+                <input
+                  type="text"
+                  id="floorNumber"
+                  placeholder="e.g., 3rd floor, rooftop"
+                  style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ddd"
+                />
+                <input
+                  type="number"
+                  id="heightAboveGround"
+                  placeholder="Height (m)"
+                  min="0"
+                  step="0.5"
+                  style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ddd"
+                />
+              </div>
+              <small style="color: #666">Floor description and approximate height in meters</small>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+              <label>Nearby Obstacles (optional):</label>
+              <textarea
+                id="droneObstacles"
+                placeholder="e.g., trees on west side, power lines 5m north, tall building to east"
+                rows="2"
+                style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ddd; resize: vertical"
+              ></textarea>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+              <label>Access Restrictions (optional):</label>
+              <input
+                type="text"
+                id="accessRestrictions"
+                placeholder="e.g., private property - permission granted, gated community"
+                style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ddd"
+              />
+            </div>
+
+            <div style="margin-bottom: 15px;">
+              <label>Preferred Approach Direction (optional):</label>
+              <input
+                type="text"
+                id="approachDirection"
+                placeholder="e.g., from south, avoid west side due to trees"
+                style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ddd"
+              />
+            </div>
+
+            <div style="margin-bottom: 0;">
+              <label>Additional Notes (optional):</label>
+              <textarea
+                id="droneNotes"
+                placeholder="Any other information useful for drone delivery operators"
+                rows="2"
+                style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ddd; resize: vertical"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
         <!-- Step 3: Create Pin -->
         <div class="card">
           <h2>Step 3: Create Your Pin</h2>
@@ -186,15 +306,20 @@
       </div>
 
       <!-- Footer -->
-      <div class="footer">
-        <p style="font-size: 11px; margin-bottom: 10px; opacity: 0.8; font-style: italic;">
+      <div style="
+        text-align: center;
+        color: white;
+        margin-top: 30px;
+        padding: 20px;
+      ">
+        <p style="font-size: 11px; margin-bottom: 10px; font-style: italic;">
           Pilot access provided for evaluation purposes. No transfer of intellectual property or implementation rights.
         </p>
         <p>&copy; 2026 dropLogik. All rights reserved.</p>
         <p>
-          <a href="/privacy-policy.html?from=trial">Privacy Policy</a> |
-          <a href="/terms-of-service.html?from=trial">Terms of Service</a> |
-          <a href="/disclaimer.html?from=trial">Disclaimer</a>
+          <a href="/privacy-policy.html?from=trial" style="color: white; margin: 0 10px">Privacy Policy</a> |
+          <a href="/terms-of-service.html?from=trial" style="color: white; margin: 0 10px">Terms of Service</a> |
+          <a href="/disclaimer.html?from=trial" style="color: white; margin: 0 10px">Disclaimer</a>
         </p>
       </div>
     </div>
@@ -272,6 +397,35 @@
         }
       }
 
+      // Toggle drone fields visibility
+      function toggleDroneFields() {
+        const droneEnabled = document.getElementById('droneEnabled').checked;
+        const droneFields = document.getElementById('droneFields');
+        droneFields.style.display = droneEnabled ? 'block' : 'none';
+      }
+
+      // Collect drone data from form
+      function collectDroneData() {
+        const droneEnabled = document.getElementById('droneEnabled').checked;
+        
+        if (!droneEnabled) {
+          return { droneEnabled: false };
+        }
+
+        return {
+          droneEnabled: true,
+          droneLandingZoneType: document.getElementById('landingZoneType').value || null,
+          droneDropZoneWidth: parseFloat(document.getElementById('dropZoneWidth').value) || null,
+          droneDropZoneLength: parseFloat(document.getElementById('dropZoneLength').value) || null,
+          droneFloor: document.getElementById('floorNumber').value || null,
+          droneHeight: parseFloat(document.getElementById('heightAboveGround').value) || null,
+          droneObstacles: document.getElementById('droneObstacles').value || null,
+          droneAccessRestrictions: document.getElementById('accessRestrictions').value || null,
+          droneApproachDirection: document.getElementById('approachDirection').value || null,
+          droneNotes: document.getElementById('droneNotes').value || null
+        };
+      }
+
       // Override createPin function to use trial code
       async function createPin() {
         if (!validatedTrialCode) {
@@ -294,6 +448,9 @@
         }
 
         try {
+          // Collect drone data
+          const droneData = collectDroneData();
+
           const response = await fetch('/api/pin/create-with-trial', {
             method: 'POST',
             headers: {
@@ -308,7 +465,8 @@
               correctedLatitude: window.correctedLocation.lat,
               correctedLongitude: window.correctedLocation.lng,
               correctionDistance: window.correctionDistance || 0,
-              trialCode: validatedTrialCode
+              trialCode: validatedTrialCode,
+              ...droneData
             }),
           });
 
@@ -351,43 +509,43 @@
           text: qrText,
           width: 256,
           height: 256,
-          colorDark: '#0000ff',
+          colorDark: '#0066ff',
           colorLight: '#ffffff',
           correctLevel: QRCode.CorrectLevel.H
         });
-
+        
         // Add logo overlay
         setTimeout(() => {
-          const qrDiv = document.getElementById('qrcode');
-          const logoSize = 51; // 20% of 256px
-          const bgSize = logoSize + 6;
-          
-          // Create circular white background
-          const bgCircle = document.createElement('div');
-          bgCircle.style.position = 'absolute';
-          bgCircle.style.left = '50%';
-          bgCircle.style.top = '50%';
-          bgCircle.style.transform = 'translate(-50%, -50%)';
-          bgCircle.style.width = `${bgSize}px`;
-          bgCircle.style.height = `${bgSize}px`;
-          bgCircle.style.backgroundColor = '#ffffff';
-          bgCircle.style.borderRadius = '50%';
-          bgCircle.style.pointerEvents = 'none';
-          qrDiv.appendChild(bgCircle);
-          
-          // Create logo on top
-          const logo = document.createElement('img');
-          logo.src = '/pics/for_qrcode.png';
-          logo.alt = 'dropLogik';
-          logo.style.position = 'absolute';
-          logo.style.left = '50%';
-          logo.style.top = '50%';
-          logo.style.transform = 'translate(-50%, -50%)';
-          logo.style.width = `${logoSize}px`;
-          logo.style.height = `${logoSize}px`;
-          logo.style.objectFit = 'contain';
-          logo.style.pointerEvents = 'none';
-          qrDiv.appendChild(logo);
+            const qrDiv = document.getElementById('qrcode');
+            const logoSize = 51; // 20% of 256px
+            const bgSize = logoSize + 6;
+            
+            // Create circular white background
+            const bgCircle = document.createElement('div');
+            bgCircle.style.position = 'absolute';
+            bgCircle.style.left = '50%';
+            bgCircle.style.top = '50%';
+            bgCircle.style.transform = 'translate(-50%, -50%)';
+            bgCircle.style.width = `${bgSize}px`;
+            bgCircle.style.height = `${bgSize}px`;
+            bgCircle.style.backgroundColor = '#ffffff';
+            bgCircle.style.borderRadius = '50%';
+            bgCircle.style.pointerEvents = 'none';
+            qrDiv.appendChild(bgCircle);
+            
+            // Create logo on top
+            const logo = document.createElement('img');
+            logo.src = '/pics/for_qrcode.png';
+            logo.alt = 'dropLogik';
+            logo.style.position = 'absolute';
+            logo.style.left = '50%';
+            logo.style.top = '50%';
+            logo.style.transform = 'translate(-50%, -50%)';
+            logo.style.width = `${logoSize}px`;
+            logo.style.height = `${logoSize}px`;
+            logo.style.objectFit = 'contain';
+            logo.style.pointerEvents = 'none';
+            qrDiv.appendChild(logo);
         }, 100);
 
         resultSection.style.display = 'block';

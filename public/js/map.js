@@ -217,6 +217,9 @@ function initializeMap() {
                 console.log("GPS unavailable:", error.message);
                 const approxLocation = await getApproximateLocation();
                 setupMap(approxLocation.lat, approxLocation.lng, false);
+                
+                // Set up listener for if user grants permission later
+                watchForPermissionChange();
             },
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
         );
@@ -226,6 +229,74 @@ function initializeMap() {
             setupMap(approxLocation.lat, approxLocation.lng, false);
         });
     }
+}
+
+// Watch for location permission changes after initial denial
+function watchForPermissionChange() {
+    if (!navigator.permissions) return; // Permissions API not supported
+    
+    navigator.permissions.query({ name: 'geolocation' }).then((permissionStatus) => {
+        permissionStatus.addEventListener('change', function() {
+            if (this.state === 'granted' && map) {
+                // Permission granted after initial denial - update map with GPS
+                console.log('Location permission granted - updating map with GPS');
+                showStatus("Location permission granted! Updating map with GPS...", "info");
+                
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        
+                        // Update original position
+                        originalPosition = { lat: lat, lng: lng };
+                        
+                        // Add red marker if it doesn't exist
+                        if (!originalMarker) {
+                            const redIcon = L.icon({
+                                iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
+                                shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+                                iconSize: [25, 41],
+                                iconAnchor: [12, 41],
+                                popupAnchor: [1, -34],
+                                shadowSize: [41, 41],
+                            });
+                            
+                            originalMarker = L.marker([lat, lng], {
+                                icon: redIcon,
+                                title: "GPS Detected Location",
+                            }).addTo(map);
+                            originalMarker
+                                .bindPopup("📍 GPS Detected Location<br>This is where your device thinks you are")
+                                .openPopup();
+                        } else {
+                            originalMarker.setLatLng([lat, lng]);
+                        }
+                        
+                        // Update green marker position
+                        correctedPosition = { lat: lat, lng: lng };
+                        correctedMarker.setLatLng([lat, lng]);
+                        correctedMarker.setPopupContent("🎯 Drag me to your actual location");
+                        
+                        // Re-center map with GPS zoom level
+                        map.setView([lat, lng], 18);
+                        
+                        // Update location state for trial pages
+                        if (typeof window.updateLocationState === 'function') {
+                            window.updateLocationState(lat, lng, lat, lng);
+                        }
+                        
+                        showStatus("Map updated with your GPS location! Drag the green marker to correct if needed.", "success");
+                    },
+                    (error) => {
+                        console.log("GPS still unavailable:", error.message);
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            }
+        });
+    }).catch((error) => {
+        console.log("Permissions API not available:", error);
+    });
 }
 
 // Update coordinate display

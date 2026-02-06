@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dropLogik API Documentation - Digital Address Integration</title>
+    <meta name="description" content="Integrate dropLogik's digital addressing service into your delivery platform, e-commerce site, or logistics system. RESTful API for GPS-based addresses.">
+    <meta name="robots" content="index, follow">
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+        .container {
+            background: white;
+            color: #333;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        h1 { color: #667eea; border-bottom: 3px solid #667eea; padding-bottom: 10px; }
+        h2 { color: #667eea; margin-top: 40px; border-left: 4px solid #667eea; padding-left: 15px; }
+        h3 { color: #444; margin-top: 25px; }
+        .endpoint {
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .method {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        .get { background: #007bff; color: white; }
+        .post { background: #28a745; color: white; }
+        .put { background: #ffc107; color: black; }
+        .delete { background: #dc3545; color: white; }
+        code {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .coming-soon {
+            background: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #667eea;
+            color: white;
+        }
+        
+        /* Responsive styles for mobile */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 20px;
+            }
+            pre {
+                padding: 12px;
+                font-size: 12px;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+            code {
+                font-size: 12px;
+                word-break: break-word;
+            }
+            .endpoint {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            h2 {
+                font-size: 20px;
+            }
+            h3 {
+                font-size: 16px;
+            }
+            table {
+                font-size: 12px;
+            }
+            th, td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <a href="/">
+                <img src="/pics/dropLogik-logo.png" alt="dropLogik" style="width: 200px; height: auto;">
+            </a>
+        </div>
+
+        <h1>📡 API Documentation</h1>
+        <p style="font-size: 18px; color: #666; margin-bottom: 30px;">
+            Integrate digital addressing into your platform. Enable users without street addresses to receive deliveries.
+        </p>
+
+        <div class="note" style="background: #d4edda; border-left: 4px solid #28a745;">
+            <h3 style="margin-top: 0; color: #155724;">✅ API Now Live - Public Access Available</h3>
+            <p>Our RESTful API is live and available for public use! Integrate dropLogik into your delivery platform, e-commerce site, or logistics system.</p>
+            <p><strong>Base URL:</strong> <code>https://droplogik.com/api</code></p>
+            <p><strong>For enterprise partnerships:</strong> info@droplogik.com</p>
+        </div>
+
+        <h2>🎯 Use Cases</h2>
+        <ul>
+            <li><strong>E-commerce Platforms:</strong> Let customers create digital addresses during checkout</li>
+            <li><strong>Delivery Apps:</strong> Enable GPS-based delivery for customers without formal addresses</li>
+            <li><strong>Postal Services:</strong> Provide digital addressing for unaddressed areas</li>
+            <li><strong>Logistics Software:</strong> Route optimization using precise GPS coordinates</li>
+            <li><strong>Food Delivery:</strong> Navigate drivers to exact locations in informal settlements</li>
+            <li><strong>Drone Delivery Services:</strong> Capture landing zone data for future autonomous deliveries (optional drone fields available)</li>
+        </ul>
+
+        <h2>� Integration Options</h2>
+        <p>dropLogik offers two ways to integrate digital addressing into your platform. Choose the approach that best fits your use case:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 20%;">Feature</th>
+                    <th style="width: 40%;">Pay-per-Pin</th>
+                    <th style="width: 40%;">Bulk Codes (Recommended)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>User Experience</strong></td>
+                    <td>User redirected to Stripe checkout</td>
+                    <td>✅ Instant pin creation, no redirect</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Flow</strong></td>
+                    <td>Customer pays ~$3 USD per pin</td>
+                    <td>✅ Company pays upfront, users get pins free</td>
+                </tr>
+                <tr>
+                    <td><strong>White-Label</strong></td>
+                    <td>Stripe branding visible</td>
+                    <td>✅ Seamless, branded experience</td>
+                </tr>
+                <tr>
+                    <td><strong>Cost Model</strong></td>
+                    <td>Variable (customer-dependent)</td>
+                    <td>✅ Predictable bulk pricing</td>
+                </tr>
+                <tr>
+                    <td><strong>Best For</strong></td>
+                    <td>Individual users, small volume</td>
+                    <td>✅ E-commerce, delivery apps, logistics platforms</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="note" style="background: #fff3cd; border-left: 4px solid #ffc107; margin-top: 20px;">
+            <h3 style="margin-top: 0; color: #856404;">💡 Why Choose Bulk Codes?</h3>
+            <p><strong>Better User Experience:</strong> No external redirects, instant pin creation, seamless integration</p>
+            <p><strong>White-Label Capability:</strong> Present digital addressing as your own feature without Stripe branding</p>
+            <p><strong>Bundle with Pricing:</strong> "Premium members get free delivery pins" or "All customers receive a digital address"</p>
+            <p><strong>Predictable Costs:</strong> Pay upfront for 100+ codes, distribute to users as needed</p>
+            <p><strong>Example Use Case:</strong> A delivery app purchases 1,000 codes for $2,500 USD. They give each new customer a free digital address pin, making deliveries easier and reducing customer service calls about "can't find address" issues.</p>
+        </div>
+
+        <h2>�📋 Available Endpoints</h2>
+
+        <div class="endpoint">
+            <h3 style="margin-top: 0;">
+                <span class="method post">POST</span>
+                <code>/api/pin/initiate-payment</code>
+            </h3>
+            <p>Create a new digital address pin with payment (Stripe or Xendit based on currency).</p>
+            
+            <h4>Request Body:</h4>
+            <pre>{
+  "latitude": 14.5995,
+  "longitude": 120.9842,
+  "locationName": "Home - Manila",
+  "phoneNumber": "+639171234567",
+  "address": "Near Jollibee, 3rd floor",
+  "droneEnabled": false,
+  "currency": "PHP",
+  "paymentMethod": "gcash"
+}</pre>
+
+            <p style="margin-top: 10px; color: #666; font-size: 14px;"><strong>Optional:</strong> Set <code>droneEnabled: true</code> and include drone fields for future autonomous delivery capabilities. See <a href="#drone-fields" style="color: #667eea;">Drone Delivery Data</a> section below.</p>
+
+            <h4>Response:</h4>
+            <pre>{
+  "success": true,
+  "sessionId": "cs_test_...",
+  "checkoutUrl": "https://checkout.stripe.com/...",
+  "pendingPinId": "PIN-12345-ABC",
+  "message": "Payment initiated. Redirect user to checkoutUrl."
+}</pre>
+
+            <p style="margin-top: 15px; color: #666;"><strong>Note:</strong> After payment completion, the pin is created and user receives QR code.</p>
+        </div>
+
+        <div class="endpoint">
+            <h3 style="margin-top: 0;">
+                <span class="method get">GET</span>
+                <code>/api/pin/retrieve/:phoneNumber</code>
+            </h3>
+            <p>Retrieve all pins associated with a phone number.</p>
+            
+            <h4>Example Request:</h4>
+            <pre>GET /api/pin/retrieve/%2B639171234567</pre>
+
+            <h4>Response:</h4>
+            <pre>{
+  "success": true,
+  "count": 2,
+  "pins": [
+    {
+      "pinId": "PIN-12345-ABC",
+      "locationName": "Home - Manila",
+      "googleMapsUrl": "https://www.google.com/maps/dir/?api=1&destination=14.5995,120.9842",
+      "latitude": 14.5995,
+      "longitude": 120.9842,
+      "createdAt": "2026-02-06T12:00:00Z",
+      "droneEnabled": true,
+      "droneData": {
+        "landingZoneType": "roof",
+        "dropZoneDimensions": { "width": 5, "length": 5 },
+        "heightAboveGround": 12,
+        "floorNumber": "Rooftop"
+      }
+    },
+    {
+      "pinId": "PIN-67890-DEF",
+      "locationName": "Office - Makati",
+      "googleMapsUrl": "https://www.google.com/maps/dir/?api=1&destination=14.5547,121.0244",
+      "latitude": 14.5547,
+      "longitude": 121.0244,
+      "createdAt": "2026-02-05T10:30:00Z"
+    }
+  ]
+}</pre>
+            <p style="margin-top: 10px; color: #666; font-size: 14px;"><strong>Note:</strong> Drone data is only included in the response if it was provided during pin creation.</p>
+        </div>
+
+        <div class="endpoint">
+            <h3 style="margin-top: 0;">
+                <span class="method post">POST</span>
+                <code>/api/bulk/purchase</code>
+            </h3>
+            <p>Purchase access codes in bulk for distribution to users.</p>
+            
+            <h4>Request Body:</h4>
+            <pre>{
+  "quantity": 100,
+  "currency": "PHP",
+  "organizationName": "Acme Delivery Co.",
+  "email": "procurement@acme.com",
+  "phoneNumber": "+639171234567"
+}</pre>
+
+            <h4>Response:</h4>
+            <pre>{
+  "success": true,
+  "sessionId": "cs_test_...",
+  "checkoutUrl": "https://checkout.stripe.com/...",
+  "pendingSessionId": "SESSION-ABC123",
+  "message": "Bulk purchase initiated. Redirect to checkoutUrl."
+}</pre>
+
+            <p style="margin-top: 15px; color: #666;"><strong>Note:</strong> After payment, codes are generated and emailed to the provided email address.</p>
+        </div>
+
+        <h2 id="drone-fields">🚁 Drone Delivery Data (Optional)</h2>
+        <p>dropLogik supports optional drone delivery metadata for future-ready autonomous delivery systems. When creating a pin, you can include detailed landing zone information to prepare locations for drone deliveries.</p>
+
+        <div class="note" style="background: #e7f3ff; border-left: 4px solid #2196F3;">
+            <h3 style="margin-top: 0; color: #0d47a1;">Why Drone Data?</h3>
+            <p><strong>Future-Proof Deliveries:</strong> As drone delivery becomes more common, your addresses will already have landing zone data</p>
+            <p><strong>Safety Information:</strong> Capture obstacles, height, and safe landing areas</p>
+            <p><strong>Autonomous Navigation:</strong> Help drones identify the best approach path and drop zone</p>
+            <p><strong>Optional Feature:</strong> Include only if relevant - doesn't affect traditional delivery methods</p>
+        </div>
+
+        <h3>Drone Fields Reference:</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>droneEnabled</code></td>
+                    <td>boolean</td>
+                    <td>Enable drone delivery data</td>
+                    <td><code>true</code></td>
+                </tr>
+                <tr>
+                    <td><code>droneLandingZoneType</code></td>
+                    <td>string</td>
+                    <td>Type of landing zone: roof, yard, balcony, street, field, other</td>
+                    <td><code>"roof"</code></td>
+                </tr>
+                <tr>
+                    <td><code>droneDropZoneWidth</code></td>
+                    <td>number</td>
+                    <td>Landing area width in meters</td>
+                    <td><code>5</code></td>
+                </tr>
+                <tr>
+                    <td><code>droneDropZoneLength</code></td>
+                    <td>number</td>
+                    <td>Landing area length in meters</td>
+                    <td><code>5</code></td>
+                </tr>
+                <tr>
+                    <td><code>droneFloor</code></td>
+                    <td>string</td>
+                    <td>Floor description</td>
+                    <td><code>"3rd floor"</code>, <code>"rooftop"</code></td>
+                </tr>
+                <tr>
+                    <td><code>droneHeight</code></td>
+                    <td>number</td>
+                    <td>Height above ground in meters</td>
+                    <td><code>9</code></td>
+                </tr>
+                <tr>
+                    <td><code>droneObstacles</code></td>
+                    <td>string</td>
+                    <td>Nearby obstacles description</td>
+                    <td><code>"Trees on west, power lines 5m north"</code></td>
+                </tr>
+                <tr>
+                    <td><code>droneAccessRestrictions</code></td>
+                    <td>string</td>
+                    <td>Access restrictions or permissions</td>
+                    <td><code>"Private property - permission granted"</code></td>
+                </tr>
+                <tr>
+                    <td><code>droneApproachDirection</code></td>
+                    <td>string</td>
+                    <td>Preferred approach direction</td>
+                    <td><code>"From south, avoid west side"</code></td>
+                </tr>
+                <tr>
+                    <td><code>droneNotes</code></td>
+                    <td>string</td>
+                    <td>Additional delivery notes</td>
+                    <td><code>"Best approach from south, avoid trees"</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top: 30px;">Example with Drone Data:</h3>
+        <div class="endpoint">
+            <h4>POST /api/pin/create-with-code (with drone fields)</h4>
+            <pre>{
+  "code": "BULK-ABC123",
+  "latitude": 14.5995,
+  "longitude": 120.9842,
+  "locationName": "Customer Home - Rooftop Access",
+  "phoneNumber": "+639171234567",
+  "address": "Near Jollibee, 3rd floor, rooftop access",
+  "droneEnabled": true,
+  "droneLandingZoneType": "roof",
+  "droneDropZoneWidth": 5,
+  "droneDropZoneLength": 5,
+  "droneFloor": "Rooftop",
+  "droneHeight": 12,
+  "droneObstacles": "Water tank on northwest corner, AC units on east side",
+  "droneAccessRestrictions": "Private property - permission granted",
+  "droneApproachDirection": "From south, avoid trees on west",
+  "droneNotes": "Best approach from south, clear landing zone in center"
+}</pre>
+        </div>
+
+        <div class="endpoint">
+            <h3 style="margin-top: 0;">
+                <span class="method post">POST</span>
+                <code>/api/pin/create-with-code</code>
+            </h3>
+            <p>Create a pin using a bulk access code (for businesses distributing codes to customers).</p>
+            
+            <h4>Request Body:</h4>
+            <pre>{
+  "code": "BULK-ABC123",
+  "latitude": 14.5995,
+  "longitude": 120.9842,
+  "locationName": "Customer Home",
+  "phoneNumber": "+639171234567",
+  "address": "Near Jollibee, 3rd floor",
+  "droneEnabled": false
+}</pre>
+
+            <p style="margin-top: 10px; color: #666; font-size: 14px;"><strong>Optional:</strong> Include drone delivery fields for autonomous delivery readiness. See <a href="#drone-fields" style="color: #667eea;">Drone Delivery Data</a> section.</p>
+
+            <h4>Response:</h4>
+            <pre>{
+  "success": true,
+  "pin": {
+    "pinId": "PIN-12345-ABC",
+    "qrCode": "QR-67890-XYZ",
+    "locationName": "Customer Home",
+    "googleMapsUrl": "https://www.google.com/maps/dir/?api=1&destination=14.5995,120.9842",
+    "correctedLatitude": 14.5995,
+    "correctedLongitude": 120.9842
+  }
+}</pre>
+        </div>
+
+        <h2>🔐 Authentication</h2>
+        <p>Most endpoints are <strong>publicly accessible</strong> without authentication. For enterprise partners requiring programmatic API access with higher rate limits, contact us for API keys:</p>
+        <pre>Authorization: Bearer YOUR_API_KEY_HERE</pre>
+
+        <div class="note">
+            <strong>💡 Public Access:</strong> The following endpoints are available without API keys:
+            <ul style="margin: 10px 0;">
+                <li><code>/api/pin/initiate-payment</code> - Create pins with payment</li>
+                <li><code>/api/pin/retrieve/:phone</code> - Retrieve pins by phone number</li>
+                <li><code>/api/pin/create-with-code</code> - Redeem bulk access codes</li>
+                <li><code>/api/bulk/purchase</code> - Purchase bulk codes</li>
+                <li><code>/api/currency/detect</code> - Detect currency from IP</li>
+            </ul>
+            <p style="margin-top: 10px;"><strong>Rate limits apply:</strong> 100 requests per 15 minutes per IP address.</p>
+        </div>
+
+        <h2>💰 Pricing</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Access Level</th>
+                    <th>Rate Limits</th>
+                    <th>Price</th>
+                    <th>Best For</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Public API</strong></td>
+                    <td>100 calls/15 min per IP</td>
+                    <td><strong>FREE</strong></td>
+                    <td>Individual developers, small integrations</td>
+                </tr>
+                <tr>
+                    <td>Enterprise</td>
+                    <td>Custom rate limits</td>
+                    <td>Contact us</td>
+                    <td>E-commerce platforms, delivery services</td>
+                </tr>
+                <tr>
+                    <td>Postal Services</td>
+                    <td>Unlimited</td>
+                    <td>Custom partnership</td>
+                    <td>Government agencies, national postal systems</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p style="color: #666; margin-top: 20px;">
+            <strong>Note:</strong> Users still pay normal pin creation fees (~$3 USD equivalent). The API integration itself is free with standard rate limits.
+        </p>
+
+        <h2>📚 Code Examples</h2>
+
+        <h3>JavaScript / Node.js</h3>
+        <pre>const axios = require('axios');
+
+async function createDigitalAddress(lat, lng, name, phone, currency = 'PHP') {
+  const response = await axios.post('https://droplogik.com/api/pin/initiate-payment', {
+    latitude: lat,
+    longitude: lng,
+    locationName: name,
+    phoneNumber: phone,
+    currency: currency,
+    paymentMethod: 'gcash' // or 'card', 'maya', etc.
+  }, {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  // Redirect user to checkout
+  window.location.href = response.data.checkoutUrl;
+}
+
+// Retrieve pins by phone number
+async function retrievePins(phone) {
+  const response = await axios.get(`https://droplogik.com/api/pin/retrieve/${encodeURIComponent(phone)}`);
+  return response.data.pins;
+}
+
+// Usage
+await createDigitalAddress(14.5995, 120.9842, "Customer Home", "+639171234567");
+const pins = await retrievePins("+639171234567");
+console.log("User's pins:", pins);</pre>
+
+        <h3>Python</h3>
+        <pre>import requests
+
+def create_digital_address(lat, lng, name, phone, currency='PHP'):
+    url = "https://droplogik.com/api/pin/initiate-payment"
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "latitude": lat,
+        "longitude": lng,
+        "locationName": name,
+        "phoneNumber": phone,
+        "currency": currency,
+        "paymentMethod": "gcash"
+    }
+    
+    response = requests.post(url, json=data, headers=headers)
+    result = response.json()
+    return result["checkoutUrl"]  # Redirect user to this URL
+
+def retrieve_pins(phone):
+    url = f"https://droplogik.com/api/pin/retrieve/{phone}"
+    response = requests.get(url)
+    return response.json()["pins"]
+
+# Usage
+checkout_url = create_digital_address(14.5995, 120.9842, "Customer Home", "+639171234567")
+print(f"Redirect to: {checkout_url}")
+
+pins = retrieve_pins("+639171234567")
+for pin in pins:
+    print(f"Pin: {pin['locationName']} - {pin['googleMapsUrl']}")</pre>
+
+        <h3>PHP</h3>
+        <pre>function createDigitalAddress($lat, $lng, $name, $phone, $currency = 'PHP') {
+    $url = "https://droplogik.com/api/pin/initiate-payment";
+    $data = [
+        "latitude" => $lat,
+        "longitude" => $lng,
+        "locationName" => $name,
+        "phoneNumber" => $phone,
+        "currency" => $currency,
+        "paymentMethod" => "gcash"
+    ];
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    
+    $response = curl_exec($ch);
+    curl_close($ch);
+    
+    return json_decode($response, true)["checkoutUrl"];
+}
+
+function retrievePins($phone) {
+    $url = "https://droplogik.com/api/pin/retrieve/" . urlencode($phone);
+    $response = file_get_contents($url);
+    return json_decode($response, true)["pins"];
+}
+
+// Usage
+$checkoutUrl = createDigitalAddress(14.5995, 120.9842, "Customer Home", "+639171234567");
+header("Location: " . $checkoutUrl);
+
+$pins = retrievePins("+639171234567");
+foreach ($pins as $pin) {
+    echo $pin["locationName"] . ": " . $pin["googleMapsUrl"] . "\n";
+}</pre>
+
+        <h2>🤝 Integration Partners</h2>
+        <p>We're actively seeking partnerships with:</p>
+        <ul>
+            <li><strong>Shopify, WooCommerce, Lazada, Shopee</strong> - E-commerce platform integrations</li>
+            <li><strong>Grab, Lalamove, GoJek</strong> - Delivery service integrations</li>
+            <li><strong>National Postal Services</strong> - Government partnerships</li>
+            <li><strong>Logistics SaaS</strong> - Route optimization platforms</li>
+        </ul>
+
+        <h2>📞 Enterprise Support</h2>
+        <div style="background: #f8f9fa; padding: 30px; border-radius: 8px; text-align: center; margin: 40px 0;">
+            <h3 style="margin-top: 0; color: #667eea;">Need Higher Rate Limits or Custom Integration?</h3>
+            <p style="font-size: 16px; margin: 20px 0;">
+                Contact us for enterprise partnerships, dedicated API keys, and custom solutions.
+            </p>
+            <p style="font-size: 18px; color: #333;">
+                <strong>Email:</strong> <a href="mailto:info@droplogik.com?subject=API Enterprise Partnership" style="color: #667eea;">info@droplogik.com</a><br>
+                <strong>Subject:</strong> "API Enterprise Partnership"
+            </p>
+            <p style="margin-top: 20px;">
+                <a href="/" style="display: inline-block; background: #667eea; color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+                    ← Back to Home
+                </a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -671,6 +671,7 @@ router.post('/create-with-code', verificationLimiter, async (req, res) => {
                 qrCode: newPin.qrCode,
                 googleMapsUrl: newPin.googleMapsUrl,
                 locationName: newPin.locationName,
+                customerPhone: newPin.customerPhone,
                 address: newPin.address,
                 correctedLatitude: newPin.correctedLatitude,
                 correctedLongitude: newPin.correctedLongitude,
@@ -758,6 +759,22 @@ router.post('/create-with-trial', verificationLimiter, async (req, res) => {
             });
         }
 
+        // Prepare drone data if provided
+        const droneEnabled = req.body.droneEnabled === 'true' || req.body.droneEnabled === true;
+        const droneData = droneEnabled ? {
+            landingZoneType: req.body.droneLandingZoneType || null,
+            dropZoneDimensions: {
+                width: req.body.droneDropZoneWidth ? parseFloat(req.body.droneDropZoneWidth) : null,
+                length: req.body.droneDropZoneLength ? parseFloat(req.body.droneDropZoneLength) : null
+            },
+            heightAboveGround: req.body.droneHeight ? parseFloat(req.body.droneHeight) : null,
+            floorNumber: req.body.droneFloor || null,
+            obstacles: req.body.droneObstacles || null,
+            approachDirection: req.body.droneApproachDirection || null,
+            accessRestrictions: req.body.droneAccessRestrictions || null,
+            notes: req.body.droneNotes || null
+        } : null;
+
         // Generate Google Maps URL for QR code
         const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${correctedLatitude},${correctedLongitude}`;
 
@@ -780,7 +797,9 @@ router.post('/create-with-trial', verificationLimiter, async (req, res) => {
             redemptionMethod: 'bulk_code', // Reuse existing field
             qrCode: generateQRCode(),
             googleMapsUrl: googleMapsUrl,
-            isActive: true
+            isActive: true,
+            droneEnabled,
+            droneData
         });
 
         await newPin.save();
@@ -798,6 +817,7 @@ router.post('/create-with-trial', verificationLimiter, async (req, res) => {
                 qrCode: newPin.qrCode,
                 googleMapsUrl: newPin.googleMapsUrl,
                 locationName: newPin.locationName,
+                customerPhone: newPin.customerPhone,
                 address: newPin.address,
                 correctedLatitude: newPin.correctedLatitude,
                 correctedLongitude: newPin.correctedLongitude,
@@ -929,7 +949,7 @@ router.get('/retrieve/:phone', retrievalLimiter, async (req, res) => {
             paymentStatus: { $in: ['verified', 'code_redeemed'] }
         })
         .sort({ createdAt: -1 }) // Newest first
-        .select('pinId locationName address correctedLatitude correctedLongitude qrCode googleMapsUrl createdAt paymentAmount currency paymentStatus');
+        .select('pinId locationName address correctedLatitude correctedLongitude qrCode googleMapsUrl createdAt paymentAmount currency paymentStatus droneEnabled droneData');
 
         if (pins.length === 0) {
             return res.status(404).json({
@@ -941,19 +961,29 @@ router.get('/retrieve/:phone', retrievalLimiter, async (req, res) => {
         res.json({
             success: true,
             count: pins.length,
-            pins: pins.map(pin => ({
-                pinId: pin.pinId,
-                locationName: pin.locationName,
-                address: pin.address,
-                latitude: pin.correctedLatitude,
-                longitude: pin.correctedLongitude,
-                qrCode: pin.qrCode,
-                googleMapsUrl: pin.googleMapsUrl,
-                createdAt: pin.createdAt,
-                paymentAmount: pin.paymentAmount,
-                currency: pin.currency || 'PHP',
-                status: pin.paymentStatus
-            }))
+            pins: pins.map(pin => {
+                const response = {
+                    pinId: pin.pinId,
+                    locationName: pin.locationName,
+                    address: pin.address,
+                    latitude: pin.correctedLatitude,
+                    longitude: pin.correctedLongitude,
+                    qrCode: pin.qrCode,
+                    googleMapsUrl: pin.googleMapsUrl,
+                    createdAt: pin.createdAt,
+                    paymentAmount: pin.paymentAmount,
+                    currency: pin.currency || 'PHP',
+                    status: pin.paymentStatus
+                };
+                
+                // Include drone data if enabled
+                if (pin.droneEnabled && pin.droneData) {
+                    response.droneEnabled = true;
+                    response.droneData = pin.droneData;
+                }
+                
+                return response;
+            })
         });
 
     } catch (error) {

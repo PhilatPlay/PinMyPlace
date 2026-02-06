@@ -217,17 +217,18 @@ function renderQRCode(qrElement, data) {
         qrElement.style.width = `${qrSize}px`;
         qrElement.style.height = `${qrSize}px`;
 
-        // Generate new QR code with responsive sizing
+        // Generate blue QR code
         new QRCode(qrElement, {
             text: data,
             width: qrSize,
             height: qrSize,
-            colorDark: "#0000ff",
+            colorDark: "#0066ff",
             colorLight: "#FFFFFF",
             correctLevel: QRCode.CorrectLevel.H,
         });
 
         addQrLogoOverlay(qrElement, qrSize);
+
         console.log("QR code generated successfully");
     } catch (error) {
         console.error("QR code generation failed:", error);

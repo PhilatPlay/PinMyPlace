@@ -1,10 +1,6 @@
-const CACHE_NAME = 'droplogik-static-v7'; // Increment this with each deployment
+const CACHE_NAME = 'droplogik-static-v13'; // Increment this with each deployment
 const CORE_ASSETS = [
   '/css/styles.css',
-  '/js/utils.js',
-  '/js/map.js',
-  '/js/payment-per-pin.js',
-  '/js/user.js',
   '/pics/for_qrcode.png',
   '/pics/pwa/icon-64.png',
   '/pics/pwa/icon-128.png',
@@ -25,9 +21,11 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+        keys.map(key => caches.delete(key))
       )
-    )
+    ).then(() => self.clients.claim())
+  );
+});
   );
   self.clients.claim();
 });
