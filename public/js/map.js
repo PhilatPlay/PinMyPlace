@@ -295,6 +295,8 @@ function requestGPSAndReload() {
                 map = null;
                 originalMarker = null;
                 correctedMarker = null;
+                originalPosition = null;
+                correctedPosition = null;
             }
             
             // Reinitialize map - will now get GPS since permission granted
@@ -386,6 +388,8 @@ function watchForPermissionChange() {
                     map = null;
                     originalMarker = null;
                     correctedMarker = null;
+                    originalPosition = null;
+                    correctedPosition = null;
                 }
                 
                 // Reinitialize map - will now get GPS since permission granted
