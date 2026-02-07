@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -116,7 +116,7 @@
                 <option value="IDR">🇮🇩 Indonesian Rupiah (Rp48,000)</option>
                 <option value="VND">🇻🇳 Vietnamese Dong (₫75,000)</option>
                 <option value="HKD">🇭🇰 Hong Kong Dollar (HK$24)</option>
-                <option value="USD">🌏 US Dollar ($3)</option>
+                <option value="USD">🇺🇸 United States Dollar ($3)</option>
                 <option value="MXN">🇲🇽 Mexican Peso (MX$55)</option>
                 <option value="BRL">🇧🇷 Brazilian Real (R$15)</option>
                 <option value="COP">🇨🇴 Colombian Peso (COL$12,500)</option>
@@ -337,11 +337,19 @@
               </div>
 
               <button
+                onclick="proceedToAccessCode()"
+                class="register-btn"
+                style="background: #667eea !important; margin-bottom: 10px;"
+              >
+                🎫 I Have an Access Code
+              </button>
+
+              <button
                 onclick="proceedToPayment()"
                 class="register-btn"
                 style="background: #28a745 !important"
               >
-                💰 Next: Pay <span class="dynamic-price">₱150</span> & Get QR
+                💰 Pay <span class="dynamic-price">₱150</span> & Get QR
                 Code →
               </button>
 
@@ -407,7 +415,7 @@
               <option value="IDR">🇮🇩 Indonesian Rupiah (Rp48,000)</option>
               <option value="VND">🇻🇳 Vietnamese Dong (₫75,000)</option>
               <option value="HKD">🇭🇰 Hong Kong Dollar (HK$24)</option>
-              <option value="USD">🌏 US Dollar ($3)</option>
+              <option value="USD">🇺🇸 United States Dollar ($3)</option>
               <option value="MXN">🇲🇽 Mexican Peso (MX$55)</option>
               <option value="BRL">🇧🇷 Brazilian Real (R$15)</option>
               <option value="COP">🇨🇴 Colombian Peso (COL$12,500)</option>
@@ -1031,10 +1039,10 @@
     </div>
 
     <!-- Application JavaScript -->
-    <script src="/js/utils.js?v=30"></script>
-    <script src="/js/map.js?v=30"></script>
-    <script src="/js/payment-per-pin.js?v=30"></script>
-    <script src="/js/user.js?v=30"></script>
+    <script src="/js/utils.js?v=31"></script>
+    <script src="/js/map.js?v=31"></script>
+    <script src="/js/payment-per-pin.js?v=31"></script>
+    <script src="/js/user.js?v=31"></script>
     <script>
       // Clear any auto-filled values from form fields
       function clearAutoFilledFields() {
@@ -1330,6 +1338,28 @@
       function showCodeMode() {
         document.getElementById('paymentMode').style.display = 'none';
         document.getElementById('codeModeCard').style.display = 'block';
+      }
+
+      // Proceed directly to access code entry
+      function proceedToAccessCode() {
+        const locationName = document.getElementById('locationName').value.trim();
+        
+        if (!locationName) {
+          alert('Please enter a location name first');
+          return;
+        }
+
+        if (!correctedPosition) {
+          alert('Please set your location on the map first');
+          return;
+        }
+
+        // Show payment section and immediately switch to code mode
+        document.getElementById('paymentSection').style.display = 'block';
+        showCodeMode();
+        
+        // Scroll to payment section
+        document.getElementById('paymentSection').scrollIntoView({ behavior: 'smooth' });
       }
 
       // Toggle drone delivery fields

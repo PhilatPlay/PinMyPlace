@@ -8,7 +8,7 @@ const CURRENCIES = {
     THB: { code: 'THB', symbol: '฿', price: 105, name: 'Thai Baht', country: 'Thailand', flag: '🇹🇭' },
     IDR: { code: 'IDR', symbol: 'Rp', price: 48000, name: 'Indonesian Rupiah', country: 'Indonesia', flag: '🇮🇩' },
     VND: { code: 'VND', symbol: '₫', price: 75000, name: 'Vietnamese Dong', country: 'Vietnam', flag: '🇻🇳' },
-    USD: { code: 'USD', symbol: '$', price: 3, name: 'US Dollar', country: 'International', flag: '🌏' },
+    USD: { code: 'USD', symbol: '$', price: 3, name: 'United States Dollar', country: 'United States', flag: '🇺🇸' },
     HKD: { code: 'HKD', symbol: 'HK$', price: 24, name: 'Hong Kong Dollar', country: 'Hong Kong', flag: '🇭🇰' },
     // Latin America
     MXN: { code: 'MXN', symbol: 'MX$', price: 55, name: 'Mexican Peso', country: 'Mexico', flag: '🇲🇽' },

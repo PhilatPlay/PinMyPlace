@@ -554,7 +554,7 @@ function showStatusInElement(elementId, message, type) {
 
 // Initialize Stripe when page loads
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeStripe);
+    document.addEventListener('DOMContentLoaded', () => initializeStripe());
 } else {
     initializeStripe();
 }

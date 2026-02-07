@@ -218,6 +218,9 @@ function initializeMap() {
                 const approxLocation = await getApproximateLocation();
                 setupMap(approxLocation.lat, approxLocation.lng, false);
                 
+                // Show button to allow GPS
+                showGPSButton();
+                
                 // Set up listener for if user grants permission later
                 watchForPermissionChange();
             },
@@ -231,6 +234,137 @@ function initializeMap() {
     }
 }
 
+// Show GPS enable button
+function showGPSButton() {
+    const mapContainer = document.getElementById('mapContainer');
+    if (!mapContainer) return;
+    
+    // Remove existing button if any
+    const existingButton = document.getElementById('gpsEnableButton');
+    if (existingButton) return; // Already showing
+    
+    const buttonDiv = document.createElement('div');
+    buttonDiv.id = 'gpsEnableButton';
+    buttonDiv.style.cssText = 'margin-bottom: 15px;';
+    
+    buttonDiv.innerHTML = `
+        <button 
+            onclick="requestGPSAndReload()" 
+            style="
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                padding: 14px 24px;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: 15px;
+                cursor: pointer;
+                width: 100%;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+                transition: transform 0.2s, box-shadow 0.2s;
+                min-height: 50px;
+            "
+            onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 12px rgba(0,0,0,0.2)';"
+            onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.15)';"
+        >
+            📍 Allow GPS Assistance
+        </button>
+    `;
+    
+    mapContainer.insertBefore(buttonDiv, mapContainer.firstChild);
+}
+
+// Request GPS permission and reload map
+function requestGPSAndReload() {
+    if (!navigator.geolocation) {
+        alert('GPS is not supported by your browser');
+        return;
+    }
+    
+    showStatus("Requesting GPS access...", "info");
+    
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            // GPS granted! Remove button
+            const buttonDiv = document.getElementById('gpsEnableButton');
+            if (buttonDiv) buttonDiv.remove();
+            
+            // Remove existing map completely
+            if (map) {
+                map.remove();
+                map = null;
+                originalMarker = null;
+                correctedMarker = null;
+            }
+            
+            // Reinitialize map - will now get GPS since permission granted
+            initializeMap();
+        },
+        (error) => {
+            console.log("GPS request failed:", error);
+            
+            // Show custom dialog with image
+            const dialog = document.createElement('div');
+            dialog.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                padding: 30px;
+                border-radius: 12px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                z-index: 10000;
+                text-align: center;
+                max-width: 400px;
+            `;
+            
+            dialog.innerHTML = `
+                <h3 style="margin-top: 0; color: #333;">To Enable GPS</h3>
+                <p style="color: #666; margin: 15px 0;">Click this icon in your browser's address bar:</p>
+                <img src="/pics/map_flag.png" style="max-width: 100%; height: auto; margin: 15px 0; border: 2px solid #ddd; border-radius: 4px;">
+                <p style="color: #666; margin: 15px 0;">Then allow location access</p>
+                <button onclick="this.parentElement.remove(); document.getElementById('dialogOverlay').remove();" 
+                    style="
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        border: none;
+                        padding: 12px 30px;
+                        border-radius: 6px;
+                        font-weight: bold;
+                        cursor: pointer;
+                        margin-top: 10px;
+                    ">
+                    Got It
+                </button>
+            `;
+            
+            // Add overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'dialogOverlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 9999;
+            `;
+            overlay.onclick = () => {
+                dialog.remove();
+                overlay.remove();
+            };
+            
+            document.body.appendChild(overlay);
+            document.body.appendChild(dialog);
+            
+            showStatus("GPS access denied. You can drag the green marker to your location.", "info");
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+}
+
 // Watch for location permission changes after initial denial
 function watchForPermissionChange() {
     if (!navigator.permissions) return; // Permissions API not supported
@@ -238,60 +372,24 @@ function watchForPermissionChange() {
     navigator.permissions.query({ name: 'geolocation' }).then((permissionStatus) => {
         permissionStatus.addEventListener('change', function() {
             if (this.state === 'granted' && map) {
-                // Permission granted after initial denial - update map with GPS
-                console.log('Location permission granted - updating map with GPS');
-                showStatus("Location permission granted! Updating map with GPS...", "info");
+                // Permission granted after initial denial - reload map completely
+                console.log('Location permission granted - reloading map with GPS');
+                showStatus("Location permission granted! Reloading map with GPS...", "info");
                 
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        
-                        // Update original position
-                        originalPosition = { lat: lat, lng: lng };
-                        
-                        // Add red marker if it doesn't exist
-                        if (!originalMarker) {
-                            const redIcon = L.icon({
-                                iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-                                shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-                                iconSize: [25, 41],
-                                iconAnchor: [12, 41],
-                                popupAnchor: [1, -34],
-                                shadowSize: [41, 41],
-                            });
-                            
-                            originalMarker = L.marker([lat, lng], {
-                                icon: redIcon,
-                                title: "GPS Detected Location",
-                            }).addTo(map);
-                            originalMarker
-                                .bindPopup("📍 GPS Detected Location<br>This is where your device thinks you are")
-                                .openPopup();
-                        } else {
-                            originalMarker.setLatLng([lat, lng]);
-                        }
-                        
-                        // Update green marker position
-                        correctedPosition = { lat: lat, lng: lng };
-                        correctedMarker.setLatLng([lat, lng]);
-                        correctedMarker.setPopupContent("🎯 Drag me to your actual location");
-                        
-                        // Re-center map with GPS zoom level
-                        map.setView([lat, lng], 18);
-                        
-                        // Update location state for trial pages
-                        if (typeof window.updateLocationState === 'function') {
-                            window.updateLocationState(lat, lng, lat, lng);
-                        }
-                        
-                        showStatus("Map updated with your GPS location! Drag the green marker to correct if needed.", "success");
-                    },
-                    (error) => {
-                        console.log("GPS still unavailable:", error.message);
-                    },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                );
+                // Remove button if showing
+                const buttonDiv = document.getElementById('gpsEnableButton');
+                if (buttonDiv) buttonDiv.remove();
+                
+                // Remove existing map completely
+                if (map) {
+                    map.remove();
+                    map = null;
+                    originalMarker = null;
+                    correctedMarker = null;
+                }
+                
+                // Reinitialize map - will now get GPS since permission granted
+                initializeMap();
             }
         });
     }).catch((error) => {

@@ -278,6 +278,17 @@ button:disabled {
   }
 }
 
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .grid {
@@ -317,6 +328,18 @@ button:disabled {
 
   .map-instructions {
     padding: 10px;
+  }
+
+  /* GPS permission banner mobile optimization */
+  #gpsPermissionBanner {
+    font-size: 14px !important;
+  }
+
+  #gpsPermissionBanner button {
+    padding: 14px 24px !important;
+    font-size: 15px !important;
+    min-height: 48px; /* iOS touch target recommendation */
+  }
     font-size: 13px;
   }
 
