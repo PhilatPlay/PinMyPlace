@@ -67,13 +67,14 @@ app.use(cors(corsOptions));
 
 // Stripe webhook needs raw body - must be BEFORE express.json()
 const stripePaymentIntents = require('./services/stripePaymentIntents');
+const stripeService = require('./services/stripeService');
 const Pin = require('./models/Pin');
 
 app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
     const signature = req.headers['stripe-signature'];
     
     try {
-        // Verify webhook signature
+        // Verify webhook signature (works for both Payment Intents and Checkout Sessions)
         const verification = stripePaymentIntents.verifyWebhookSignature(req.body, signature);
         
         if (!verification.success) {
@@ -84,31 +85,54 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         const event = verification.event;
         console.log(`📨 Received Stripe webhook: ${event.type}`);
         
-        // Handle the event
-        const result = await stripePaymentIntents.handlePaymentIntentWebhook(event);
+        // Respond 200 OK immediately to prevent timeouts
+        res.json({ received: true });
         
-        // Update pin payment status based on webhook
-        if (result.success && result.metadata) {
-            const { pinId, referenceNumber } = result.metadata;
+        // Process the event asynchronously based on type
+        if (event.type.startsWith('payment_intent.')) {
+            // Handle Payment Intent events (LATAM currencies)
+            const result = await stripePaymentIntents.handlePaymentIntentWebhook(event);
             
-            if (pinId && result.status === 'succeeded') {
-                try {
-                    await Pin.findByIdAndUpdate(pinId, {
-                        paymentStatus: 'verified',
-                        paymentProvider: 'stripe',
-                        stripePaymentIntentId: result.paymentIntentId
-                    });
-                    console.log(`✅ Pin ${pinId} payment verified via webhook`);
-                } catch (error) {
-                    console.error('Error updating pin from webhook:', error);
+            if (result.success && result.metadata) {
+                const { pinId } = result.metadata;
+                
+                if (pinId && result.status === 'succeeded') {
+                    try {
+                        await Pin.findByIdAndUpdate(pinId, {
+                            paymentStatus: 'verified',
+                            paymentProvider: 'stripe-intent',
+                            stripePaymentIntentId: result.paymentIntentId
+                        });
+                        console.log(`✅ Pin ${pinId} payment verified via Payment Intent webhook`);
+                    } catch (error) {
+                        console.error('Error updating pin from Payment Intent webhook:', error);
+                    }
+                }
+            }
+        } else if (event.type.startsWith('checkout.session.')) {
+            // Handle Checkout Session events (USD and other currencies)
+            const result = stripeService.handleStripeWebhook(event);
+            
+            if (result.success && event.type === 'checkout.session.completed') {
+                const { metadata } = result;
+                
+                if (metadata && metadata.pinId) {
+                    try {
+                        await Pin.findByIdAndUpdate(metadata.pinId, {
+                            paymentStatus: 'verified',
+                            paymentProvider: 'stripe',
+                            stripeSessionId: result.sessionId
+                        });
+                        console.log(`✅ Pin ${metadata.pinId} payment verified via Checkout Session webhook`);
+                    } catch (error) {
+                        console.error('Error updating pin from Checkout Session webhook:', error);
+                    }
                 }
             }
         }
-        
-        res.json({ received: true });
     } catch (error) {
         console.error('❌ Webhook handling error:', error);
-        res.status(400).send(`Webhook Error: ${error.message}`);
+        // Don't send error response here since we already sent 200 OK
     }
 });
 

@@ -5,6 +5,13 @@ let paymentReferenceNumber = null;
 let stripe = null; // Stripe.js instance
 let elements = null; // Stripe Elements instance
 
+// Utility: Escape HTML to prevent XSS and rendering errors
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Initialize Stripe (will be loaded from CDN)
 function initializeStripe(publishableKey) {
     if (window.Stripe && !stripe) {
@@ -481,13 +488,32 @@ function displayQRCode(result) {
         }
 
         // Set details
+    let droneHtml = '';
+    if (result.pin.droneEnabled && result.pin.droneData) {
+      droneHtml = `
+        <div style="background: #e8f4fd; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 12px;">
+          <strong style="color: #007bff;">🚁 Drone Delivery Details:</strong><br>
+          ${result.pin.droneData.landingZoneType ? `<strong>Landing Zone:</strong> ${escapeHtml(result.pin.droneData.landingZoneType)}<br>` : ''}
+          ${result.pin.droneData.dropZoneDimensions && (result.pin.droneData.dropZoneDimensions.width || result.pin.droneData.dropZoneDimensions.length) ? 
+            `<strong>Drop Zone:</strong> ${result.pin.droneData.dropZoneDimensions.width || '?'}m × ${result.pin.droneData.dropZoneDimensions.length || '?'}m<br>` : ''}
+          ${result.pin.droneData.floorNumber ? `<strong>Floor:</strong> ${escapeHtml(result.pin.droneData.floorNumber)}<br>` : ''}
+          ${result.pin.droneData.heightAboveGround ? `<strong>Height:</strong> ${result.pin.droneData.heightAboveGround}m<br>` : ''}
+          ${result.pin.droneData.obstacles ? `<strong>Obstacles:</strong> ${escapeHtml(result.pin.droneData.obstacles)}<br>` : ''}
+          ${result.pin.droneData.accessRestrictions ? `<strong>Access:</strong> ${escapeHtml(result.pin.droneData.accessRestrictions)}<br>` : ''}
+          ${result.pin.droneData.approachDirection ? `<strong>Approach:</strong> ${escapeHtml(result.pin.droneData.approachDirection)}<br>` : ''}
+          ${result.pin.droneData.notes ? `<strong>Notes:</strong> ${escapeHtml(result.pin.droneData.notes)}` : ''}
+        </div>
+      `;
+    }
+
     qrDetails.innerHTML = `
-    <h4>${result.pin.locationName}</h4>
-    <p style="color: #666; margin: 5px 0;">${result.pin.address || 'No address specified'}</p>
+    <h4>${escapeHtml(result.pin.locationName)}</h4>
+    <p style="color: #666; margin: 5px 0;">${escapeHtml(result.pin.address || 'No address specified')}</p>
     <p style="font-size: 13px; color: #999;">
       Pin ID: ${result.pin.pinId}<br>
       <strong>📍 GPS Coordinates:</strong> ${result.pin.correctedLatitude.toFixed(6)}, ${result.pin.correctedLongitude.toFixed(6)}
     </p>
+    ${droneHtml}
   `;
 
     // Generate QR code with link to location

@@ -124,9 +124,11 @@
               </select>
             </div>
             <div style="font-size: 13px; color: #666; flex: 1; min-width: 200px;">
-              💡 Prices shown in your selected currency<br>
+              <span style="display: inline-block; margin-bottom: 8px;">💡 Prices shown in your selected currency</span><br>
               <a href="#" onclick="goToBulkPurchase(); return false;" style="color: #007bff; text-decoration: underline;">📦 Buy codes in bulk</a> - Get wholesale discounts!<br>
-              <a href="/retrieve-pins.html" style="color: #667eea; text-decoration: underline;">📍 Retrieve my pins</a> - Find your saved locations
+              <span style="display: inline-block; margin-top: 8px;">
+                <a href="/retrieve-pins.html" style="color: #667eea; text-decoration: underline;">📍 Retrieve my pins</a> - Find your saved locations
+              </span>
             </div>
           </div>
         </div>
@@ -1569,6 +1571,13 @@
         }
       }
 
+      // Utility: Escape HTML to prevent XSS and rendering errors
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
       // Display QR code (reuse existing function or create if not exists)
       function displayQRCode(pin) {
         const qrSection = document.getElementById('qrSection');
@@ -1607,13 +1616,32 @@
           ? `${lat.toFixed(6)}, ${lng.toFixed(6)}`
           : 'Coordinates unavailable';
 
+        let droneHtml = '';
+        if (resolvedPin?.droneEnabled && resolvedPin?.droneData) {
+          droneHtml = `
+            <div style="background: #e8f4fd; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 12px;">
+              <strong style="color: #007bff;">🚁 Drone Delivery Details:</strong><br>
+              ${resolvedPin.droneData.landingZoneType ? `<strong>Landing Zone:</strong> ${escapeHtml(resolvedPin.droneData.landingZoneType)}<br>` : ''}
+              ${resolvedPin.droneData.dropZoneDimensions && (resolvedPin.droneData.dropZoneDimensions.width || resolvedPin.droneData.dropZoneDimensions.length) ? 
+                `<strong>Drop Zone:</strong> ${resolvedPin.droneData.dropZoneDimensions.width || '?'}m × ${resolvedPin.droneData.dropZoneDimensions.length || '?'}m<br>` : ''}
+              ${resolvedPin.droneData.floorNumber ? `<strong>Floor:</strong> ${escapeHtml(resolvedPin.droneData.floorNumber)}<br>` : ''}
+              ${resolvedPin.droneData.heightAboveGround ? `<strong>Height:</strong> ${resolvedPin.droneData.heightAboveGround}m<br>` : ''}
+              ${resolvedPin.droneData.obstacles ? `<strong>Obstacles:</strong> ${escapeHtml(resolvedPin.droneData.obstacles)}<br>` : ''}
+              ${resolvedPin.droneData.accessRestrictions ? `<strong>Access:</strong> ${escapeHtml(resolvedPin.droneData.accessRestrictions)}<br>` : ''}
+              ${resolvedPin.droneData.approachDirection ? `<strong>Approach:</strong> ${escapeHtml(resolvedPin.droneData.approachDirection)}<br>` : ''}
+              ${resolvedPin.droneData.notes ? `<strong>Notes:</strong> ${escapeHtml(resolvedPin.droneData.notes)}` : ''}
+            </div>
+          `;
+        }
+
         qrDetails.innerHTML = `
-          <h4>${resolvedPin?.locationName || 'Location'}</h4>
-          <p style="color: #666; margin: 5px 0;">${resolvedPin?.address || 'No address specified'}</p>
+          <h4>${escapeHtml(resolvedPin?.locationName || 'Location')}</h4>
+          <p style="color: #666; margin: 5px 0;">${escapeHtml(resolvedPin?.address || 'No address specified')}</p>
           <p style="font-size: 13px; color: #999;">
             Pin ID: ${resolvedPin?.pinId || 'N/A'}<br>
             <strong>📍 GPS Coordinates:</strong> ${coordsText}
           </p>
+          ${droneHtml}
         `;
 
         // Generate QR code with link to location

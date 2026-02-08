@@ -158,22 +158,48 @@
         }
       }
 
+      // Utility: Escape HTML to prevent XSS and rendering errors
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
       function displaySuccess(pin) {
         document.getElementById("processingSection").style.display = "none";
         document.getElementById("successSection").style.display = "block";
 
         // Set details
+        let droneHtml = '';
+        if (pin.droneEnabled && pin.droneData) {
+          droneHtml = `
+            <div style="background: #e8f4fd; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 12px;">
+              <strong style="color: #007bff;">🚁 Drone Delivery Details:</strong><br>
+              ${pin.droneData.landingZoneType ? `<strong>Landing Zone:</strong> ${escapeHtml(pin.droneData.landingZoneType)}<br>` : ''}
+              ${pin.droneData.dropZoneDimensions && (pin.droneData.dropZoneDimensions.width || pin.droneData.dropZoneDimensions.length) ? 
+                `<strong>Drop Zone:</strong> ${pin.droneData.dropZoneDimensions.width || '?'}m × ${pin.droneData.dropZoneDimensions.length || '?'}m<br>` : ''}
+              ${pin.droneData.floorNumber ? `<strong>Floor:</strong> ${escapeHtml(pin.droneData.floorNumber)}<br>` : ''}
+              ${pin.droneData.heightAboveGround ? `<strong>Height:</strong> ${pin.droneData.heightAboveGround}m<br>` : ''}
+              ${pin.droneData.obstacles ? `<strong>Obstacles:</strong> ${escapeHtml(pin.droneData.obstacles)}<br>` : ''}
+              ${pin.droneData.accessRestrictions ? `<strong>Access:</strong> ${escapeHtml(pin.droneData.accessRestrictions)}<br>` : ''}
+              ${pin.droneData.approachDirection ? `<strong>Approach:</strong> ${escapeHtml(pin.droneData.approachDirection)}<br>` : ''}
+              ${pin.droneData.notes ? `<strong>Notes:</strong> ${escapeHtml(pin.droneData.notes)}` : ''}
+            </div>
+          `;
+        }
+
         document.getElementById("qrDetails").innerHTML = `
-                <h4>${pin.locationName}</h4>
-                <p style="color: #666; margin: 5px 0;">${
+                <h4>${escapeHtml(pin.locationName)}</h4>
+                <p style="color: #666; margin: 5px 0;">${escapeHtml(
                   pin.address || "No address specified"
-                }</p>
+                )}</p>
                 <p style="font-size: 13px; color: #999;">
                     Pin ID: ${pin.pinId}<br>
                     <strong>📍 GPS Coordinates:</strong> ${pin.correctedLatitude.toFixed(
                       6
                     )}, ${pin.correctedLongitude.toFixed(6)}
                 </p>
+                ${droneHtml}
             `;
 
         // Use stored Google Maps URL from backend, or generate as fallback

@@ -289,6 +289,21 @@
                 <strong>Amount Paid:</strong> ${pin.currency} ${pin.paymentAmount}
               </div>
 
+              ${pin.droneEnabled && pin.droneData ? `
+              <div class="pin-details" style="background: #e8f4fd; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                <strong style="color: #007bff;">🚁 Drone Delivery Details:</strong><br>
+                ${pin.droneData.landingZoneType ? `<strong>Landing Zone:</strong> ${escapeHtml(pin.droneData.landingZoneType)}<br>` : ''}
+                ${pin.droneData.dropZoneDimensions && (pin.droneData.dropZoneDimensions.width || pin.droneData.dropZoneDimensions.length) ? 
+                  `<strong>Drop Zone Size:</strong> ${pin.droneData.dropZoneDimensions.width || '?'}m × ${pin.droneData.dropZoneDimensions.length || '?'}m<br>` : ''}
+                ${pin.droneData.floorNumber ? `<strong>Floor:</strong> ${escapeHtml(pin.droneData.floorNumber)}<br>` : ''}
+                ${pin.droneData.heightAboveGround ? `<strong>Height:</strong> ${pin.droneData.heightAboveGround}m above ground<br>` : ''}
+                ${pin.droneData.obstacles ? `<strong>Obstacles:</strong> ${escapeHtml(pin.droneData.obstacles)}<br>` : ''}
+                ${pin.droneData.accessRestrictions ? `<strong>Access:</strong> ${escapeHtml(pin.droneData.accessRestrictions)}<br>` : ''}
+                ${pin.droneData.approachDirection ? `<strong>Approach:</strong> ${escapeHtml(pin.droneData.approachDirection)}<br>` : ''}
+                ${pin.droneData.notes ? `<strong>Notes:</strong> ${escapeHtml(pin.droneData.notes)}` : ''}
+              </div>
+              ` : ''}
+
               <div id="map-${index}" class="pin-map"></div>
               
               <div id="qr-${index}" style="text-align: center; padding: 20px; background: white; border-radius: 8px; margin: 15px 0;"></div>
@@ -405,7 +420,7 @@
           });
 
           const link = document.createElement('a');
-          link.download = `${pin.pinId}_${pin.locationName.replace(/\s+/g, '_')}.png`;
+          link.download = `${pin.pinId}_${sanitizeFilename(pin.locationName)}.png`;
           link.href = canvas.toDataURL('image/png');
           link.click();
         } catch (error) {
@@ -422,6 +437,17 @@
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+      }
+
+      // Sanitize filename by removing/replacing invalid characters
+      function sanitizeFilename(filename) {
+        // Replace invalid filename characters with underscores
+        // Invalid chars: / \ : * ? " < > |
+        return filename
+          .replace(/[/\\:*?"<>|]/g, '_')
+          .replace(/\s+/g, '_')
+          .replace(/_+/g, '_')
+          .substring(0, 100); // Limit length
       }
 
       // Allow Enter key to submit

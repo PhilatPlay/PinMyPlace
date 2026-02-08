@@ -136,7 +136,31 @@ async function verifyStripePayment(sessionId) {
 }
 
 /**
- * Handle Stripe webhook events
+ * Verify Stripe webhook signature
+ * @param {Buffer} payload - Raw request body
+ * @param {string} signature - Stripe signature header
+ */
+function verifyWebhookSignature(payload, signature) {
+    try {
+        if (!stripe) {
+            throw new Error('Stripe not configured');
+        }
+
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET_TEST;
+        if (!webhookSecret) {
+            throw new Error('STRIPE_WEBHOOK_SECRET or STRIPE_WEBHOOK_SECRET_TEST not configured');
+        }
+
+        const event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+        return { success: true, event };
+    } catch (error) {
+        console.error('Webhook signature verification failed:', error.message);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Handle Stripe Checkout Session webhook events
  * @param {object} event - Stripe webhook event
  */
 function handleStripeWebhook(event) {
@@ -146,7 +170,9 @@ function handleStripeWebhook(event) {
         if (eventType === 'checkout.session.completed') {
             const session = event.data.object;
             return {
+                success: true,
                 type: 'payment_success',
+                sessionId: session.id,
                 referenceNumber: session.client_reference_id,
                 metadata: session.metadata,
                 amount: session.amount_total / 100,
@@ -157,20 +183,23 @@ function handleStripeWebhook(event) {
         if (eventType === 'checkout.session.expired') {
             const session = event.data.object;
             return {
+                success: true,
                 type: 'payment_expired',
+                sessionId: session.id,
                 referenceNumber: session.client_reference_id
             };
         }
 
-        return null;
+        return { success: false, error: 'Unhandled event type: ' + eventType };
     } catch (error) {
         console.error('Stripe webhook handling error:', error.message);
-        return null;
+        return { success: false, error: error.message };
     }
 }
 
 module.exports = {
     createStripePayment,
     verifyStripePayment,
+    verifyWebhookSignature,
     handleStripeWebhook
 };
