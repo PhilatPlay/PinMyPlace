@@ -50,7 +50,9 @@ function isValidCoordinates(lat, lng) {
 
 function sanitizeInput(input) {
     if (!input) return '';
-    return validator.escape(validator.trim(input.toString()));
+    // Only trim - do NOT escape HTML here
+    // Data should be stored raw in DB, escaped only when displayed in frontend
+    return validator.trim(input.toString());
 }
 
 // PayMongo webhook removed - service no longer in use
